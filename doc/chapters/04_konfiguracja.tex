@@ -1,0 +1,244 @@
+\section{Pliki konfiguracyjne projektu}
+
+Każdy projekt Next.js wymaga odpowiedniej konfiguracji. Niniejszy rozdział omawia kluczowe pliki konfiguracyjne i ich rolę w projekcie.
+
+\subsection{package.json}
+
+Plik \texttt{package.json} jest sercem każdego projektu Node.js. Zawiera metadane projektu, listę zależności oraz definicje skryptów npm.
+
+\begin{lstlisting}[language=JavaScript, caption={Zawartość pliku package.json}, label={lst:package-json}]
+{
+  "name": "nextjs-todo",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:migrate": "prisma migrate dev --create-only --name",
+    "db:update": "prisma migrate deploy && prisma generate"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.0",
+    "dotenv": "^17.2.3",
+    "next": "16.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.1",
+    "prisma": "^6.19.0",
+    "typescript": "^5"
+  }
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{package.json:1-30}
+
+\subsubsection{Sekcja scripts}
+
+Skrypty npm definiują komendy uruchamiające różne operacje:
+
+\begin{itemize}
+    \item \texttt{dev} - uruchamia serwer deweloperski Next.js z hot reload na porcie 3000
+    \item \texttt{build} - buduje aplikację do wersji produkcyjnej (optymalizacja, minifikacja)
+    \item \texttt{start} - uruchamia serwer produkcyjny (wymaga wcześniejszego \texttt{build})
+    \item \texttt{lint} - uruchamia ESLint do analizy kodu
+    \item \texttt{db:migrate} - tworzy nową migrację bazy danych (tylko plik SQL, bez wykonania)
+    \item \texttt{db:update} - wykonuje migracje i generuje Prisma Client
+\end{itemize}
+
+\subsubsection{Dependencies}
+
+Zależności produkcyjne (wymagane do uruchomienia aplikacji):
+
+\begin{itemize}
+    \item \texttt{@prisma/client} (v6.19.0) - klient bazy danych Prisma
+    \item \texttt{dotenv} (v17.2.3) - ładowanie zmiennych środowiskowych z pliku .env
+    \item \texttt{next} (v16.0.1) - framework Next.js
+    \item \texttt{react} (v19.2.0) - biblioteka React
+    \item \texttt{react-dom} (v19.2.0) - renderer React dla przeglądarki
+    \item \texttt{zod} (v4.1.12) - biblioteka walidacji danych
+\end{itemize}
+
+\subsubsection{DevDependencies}
+
+Zależności deweloperskie (wymagane tylko podczas developmentu):
+
+\begin{itemize}
+    \item \texttt{@types/*} - definicje typów TypeScript dla różnych pakietów
+    \item \texttt{eslint} (v9) - linter JavaScript/TypeScript
+    \item \texttt{eslint-config-next} (v16.0.1) - konfiguracja ESLint dla Next.js
+    \item \texttt{prisma} (v6.19.0) - CLI Prisma (migracje, Prisma Studio)
+    \item \texttt{typescript} (v5) - kompilator TypeScript
+\end{itemize}
+
+\subsection{tsconfig.json}
+
+Plik \texttt{tsconfig.json} konfiguruje kompilator TypeScript. Definiuje opcje kompilacji, które wpływają na sposób tłumaczenia kodu TypeScript na JavaScript.
+
+\begin{lstlisting}[language=JavaScript, caption={Zawartość pliku tsconfig.json}]
+{
+  "compilerOptions": {
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}
+\end{lstlisting}
+
+\subsubsection{Kluczowe opcje compilerOptions}
+
+\begin{itemize}
+    \item \texttt{strict: true} - włącza wszystkie ścisłe opcje typowania TypeScript. Zapewnia maksymalne bezpieczeństwo typów.
+
+    \item \texttt{lib} - definiuje dostępne biblioteki typów (DOM API, ES2015+ features)
+
+    \item \texttt{jsx: "preserve"} - pozostawia składnię JSX niezmienioną (Next.js sam zajmie się transformacją)
+
+    \item \texttt{moduleResolution: "bundler"} - strategia rozwiązywania modułów zoptymalizowana dla bundlerów (narzędzi pakujących kod, np. Webpack, Vite)
+
+    \item \texttt{paths} - aliasy ścieżek. Notacja \texttt{@/*} pozwala importować pliki z katalogu głównego:
+
+    \begin{lstlisting}[language=TypeScript]
+import { prisma } from '@/lib/prisma';  // zamiast '../../../lib/prisma'
+    \end{lstlisting}
+
+    \item \texttt{noEmit: true} - TypeScript nie generuje plików JavaScript (robi to Next.js)
+\end{itemize}
+
+\subsection{next.config.ts}
+
+Plik \texttt{next.config.ts} zawiera konfigurację specyficzną dla Next.js. W podstawowej wersji projektu jest praktycznie pusty:
+
+\begin{lstlisting}[language=TypeScript, caption={Zawartość pliku next.config.ts}]
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;
+\end{lstlisting}
+
+\subsubsection{Możliwe opcje konfiguracji}
+
+Choć w naszym projekcie plik jest pusty, \texttt{next.config.ts} może zawierać zaawansowane opcje:
+
+\begin{itemize}
+    \item \texttt{reactStrictMode} - włącza tryb ścisły React (wykrywanie problemów)
+    \item \texttt{images} - konfiguracja optymalizacji obrazów
+    \item \texttt{redirects} - definiowanie przekierowań URL
+    \item \texttt{rewrites} - przepisywanie URL
+    \item \texttt{env} - zmienne środowiskowe dostępne w przeglądarce
+    \item \texttt{webpack} - zaawansowana konfiguracja webpacka
+\end{itemize}
+
+\subsection{.env - Zmienne środowiskowe}
+
+Plik \texttt{.env} zawiera zmienne środowiskowe używane w aplikacji. Nie jest commitowany do repozytorium Git (znajduje się w \texttt{.gitignore}), aby chronić wrażliwe dane (hasła, klucze API, connection strings).
+
+\textbf{Ważne}: Do repozytorium commitowany jest natomiast plik \texttt{example.env}, który zawiera przykładową konfigurację bez wrażliwych danych. Przed uruchomieniem aplikacji należy:
+
+\begin{enumerate}
+    \item Skopiować plik \texttt{example.env} do \texttt{.env}:
+    \begin{lstlisting}[language=bash]
+cp example.env .env
+    \end{lstlisting}
+
+    \item Ewentualnie dostosować wartości zmiennych do lokalnego środowiska
+\end{enumerate}
+
+\begin{lstlisting}[caption={Zawartość pliku .env}]
+# This was inserted by `prisma init`:
+# Environment variables declared in this file are automatically made available to Prisma.
+# See the documentation for more detail: https://pris.ly/d/prisma-schema#accessing-environment-variables-from-the-schema
+
+# Prisma supports the native connection string format for PostgreSQL, MySQL, SQLite, SQL Server, MongoDB and CockroachDB.
+# See the documentation for all the connection string options: https://pris.ly/d/connection-strings
+
+DATABASE_URL="file:./dev.db"
+\end{lstlisting}
+
+\subsubsection{DATABASE\_URL}
+
+Zmienna \texttt{DATABASE\_URL} definiuje połączenie do bazy danych. W przypadku SQLite jest to ścieżka do pliku:
+
+\begin{lstlisting}
+DATABASE_URL="file:./dev.db"
+\end{lstlisting}
+
+Dla innych baz danych wyglądałoby to inaczej:
+
+\begin{lstlisting}
+# PostgreSQL
+DATABASE_URL="postgresql://user:password@localhost:5432/mydb"
+
+# MySQL
+DATABASE_URL="mysql://user:password@localhost:3306/mydb"
+\end{lstlisting}
+
+\subsection{.gitignore}
+
+Plik \texttt{.gitignore} definiuje, które pliki i katalogi nie powinny być śledzone przez Git:
+
+\begin{lstlisting}[caption={Fragmenty pliku .gitignore}]
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+\end{lstlisting}
+
+Kluczowe ignorowane elementy:
+\begin{itemize}
+    \item \texttt{node\_modules} - zależności (mogą być odtworzone przez \texttt{npm install})
+    \item \texttt{.next} - pliki wygenerowane przez Next.js
+    \item \texttt{.env*} - pliki zmiennych środowiskowych (mogą zawierać sekrety)
+\end{itemize}
+\newpage

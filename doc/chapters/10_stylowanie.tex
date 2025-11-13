@@ -1,0 +1,424 @@
+\section{Stylowanie aplikacji}
+
+Aplikacja wykorzystuje CSS Modules do stylowania komponentów. Niniejszy rozdział omawia system stylowania oraz konkretne style użyte w projekcie.
+
+\subsection{CSS Modules}
+
+CSS Modules to podejście do stylowania, które automatycznie izoluje style komponentów, zapobiegając konfliktom nazw klas CSS.
+
+\subsubsection{Jak działają CSS Modules?}
+
+\paragraph{1. Konwencja nazewnictwa}
+Pliki CSS Modules mają rozszerzenie \texttt{.module.css}:
+\begin{lstlisting}
+page.module.css
+TodoForm.module.css
+TodoItem.module.css
+\end{lstlisting}
+
+\paragraph{2. Import i użycie}\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Import CSS Modules}]
+import styles from './page.module.css';
+
+export default function Page() {
+  return <div className={styles.container}>...</div>;
+}
+\end{lstlisting}
+
+\paragraph{3. Generowanie unikalnych nazw}\mbox{}
+Next.js automatycznie przekształca nazwy klas na unikalne:
+
+\begin{lstlisting}[caption={Przed (w pliku CSS)}]
+.container {
+  max-width: 600px;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[caption={Po (w HTML)}]
+<div class="page_container__a1b2c3">
+\end{lstlisting}
+
+Dzięki temu klasa \texttt{.container} w jednym module nie koliduje z \texttt{.container} w innym.
+
+\subsubsection{Zalety CSS Modules}
+
+\begin{itemize}
+    \item \textbf{Scoped styles} - style ograniczone do komponentu
+    \item \textbf{Brak konfliktów} - unikalne nazwy klas
+    \item \textbf{Explicit dependencies} - komponenty jawnie importują swoje style
+    \item \textbf{Dead code elimination} - nieużywane style można wykryć
+    \item \textbf{Composition} - możliwość kompozycji klas z różnych modułów
+\end{itemize}
+
+\subsection{Globalne style - globals.css}
+
+Plik \texttt{app/globals.css} zawiera globalne style stosowane do całej aplikacji. Importowany jest w root layout.
+
+\begin{lstlisting}[language=CSS, caption={Fragmenty pliku globals.css}]
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
+    'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  background-color: #f5f5f5;
+  color: #333;
+  line-height: 1.6;
+}
+
+a {
+  color: #0070f3;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+\end{lstlisting}
+
+\subsubsection{Analiza globals.css}
+
+\paragraph{CSS Reset}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+\end{lstlisting}
+
+Resetuje domyślne marginesy i paddingi przeglądarki. \texttt{box-sizing: border-box} sprawia, że padding i border są wliczane w szerokość elementu.
+
+\paragraph{Globalne style body}
+\begin{itemize}
+    \item \texttt{font-family} - system fonts (natywne fonty systemu operacyjnego)
+    \item \texttt{background-color: \#f5f5f5} - jasne tło
+    \item \texttt{color: \#333} - ciemnoszary tekst
+    \item \texttt{line-height: 1.6} - większa czytelność tekstu
+\end{itemize}
+
+\paragraph{Style linków}\mbox{}
+\begin{lstlisting}[language=CSS]
+a {
+  color: #0070f3;  /* niebieski */
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+\end{lstlisting}
+
+Linki są niebieskie bez podkreślenia. Po najechaniu myszką pojawia się podkreślenie.
+
+\subsection{Style strony głównej - page.module.css}
+
+Plik \texttt{app/page.module.css} zawiera style dla strony głównej.
+
+\begin{lstlisting}[language=CSS, caption={Fragmenty page.module.css}]
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #ddd;
+}
+
+.addBtn {
+  background-color: #0070f3;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.addBtn:hover {
+  background-color: #0051cc;
+}
+
+.todoList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.todoItem {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.todoCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  cursor: pointer;
+}
+
+.completed {
+  text-decoration: line-through;
+  color: #999;
+}
+
+.editBtn {
+  background-color: #f39c12;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  margin-right: 5px;
+}
+
+.deleteBtn {
+  background-color: #e74c3c;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+\end{lstlisting}
+
+\subsubsection{Analiza kluczowych klas}
+
+\paragraph{.container - główny kontener}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{max-width: 600px} - ogranicza szerokość na dużych ekranach
+    \item \texttt{margin: 0 auto} - wyśrodkowanie poziome
+    \item \texttt{padding: 20px} - wewnętrzne odstępy
+\end{itemize}
+
+\paragraph{.header - nagłówek z przyciskiem}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+\end{lstlisting}
+
+Flexbox layout:
+\begin{itemize}
+    \item \texttt{space-between} - tytuł po lewej, przycisk po prawej
+    \item \texttt{align-items: center} - pionowe wyśrodkowanie elementów
+\end{itemize}
+
+\paragraph{.todoList - lista zadań}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.todoList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+\end{lstlisting}
+
+Flexbox column:
+\begin{itemize}
+    \item \texttt{flex-direction: column} - elementy jeden pod drugim
+    \item \texttt{gap: 10px} - odstęp 10px między zadaniami
+\end{itemize}
+
+\paragraph{.todoItem - pojedyncze zadanie}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.todoItem {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+}
+\end{lstlisting}
+
+Styl karty (card):
+\begin{itemize}
+    \item Białe tło na szarym tle strony
+    \item Zaokrąglone rogi (\texttt{border-radius})
+    \item Subtelny cień (\texttt{box-shadow})
+    \item Flexbox: checkbox po lewej, przyciski po prawej
+\end{itemize}
+
+\paragraph{.completed - ukończone zadanie}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.completed {
+  text-decoration: line-through;
+  color: #999;
+}
+\end{lstlisting}
+
+Przekreślony tekst i jasnoszary kolor dla ukończonych zadań.
+
+\paragraph{Przyciski - kolorystyka}
+\begin{itemize}
+    \item \texttt{.addBtn} - niebieski (\#0070f3)
+    \item \texttt{.editBtn} - pomarańczowy (\#f39c12)
+    \item \texttt{.deleteBtn} - czerwony (\#e74c3c)
+\end{itemize}
+
+Kolorystyka zgodna z konwencją:
+\begin{itemize}
+    \item Niebieski - akcja podstawowa (dodawanie)
+    \item Pomarańczowy - akcja zmiany (edycja)
+    \item Czerwony - akcja destrukcyjna (usuwanie)
+\end{itemize}
+
+\subsection{Style formularza - TodoForm.module.css}
+
+Plik \texttt{app/components/TodoForm.module.css} styluje formularz dodawania/edycji.
+
+\begin{lstlisting}[language=CSS, caption={Fragmenty TodoForm.module.css}]
+.todoForm {
+  background-color: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.formGroup {
+  margin-bottom: 20px;
+}
+
+.formGroup label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #333;
+}
+
+.formGroup input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 16px;
+}
+
+.formGroup input:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+
+.error {
+  color: #dc2626;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.errorMessage {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.submitBtn {
+  background-color: #0070f3;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.submitBtn:hover {
+  background-color: #0051cc;
+}
+\end{lstlisting}
+
+\subsubsection{Analiza}
+
+\paragraph{.formGroup - kontener pola}\mbox{}
+Grupuje label i input razem z marginami.
+
+\paragraph{input:focus - stan focus}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.formGroup input:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 3px rgba(0, 112, 243, 0.1);
+}
+\end{lstlisting}
+
+Po kliknięciu w pole:
+\begin{itemize}
+    \item Usuwa domyślny outline
+    \item Zmienia kolor obramowania na niebieski
+    \item Dodaje subtelną niebieską poświatę (box-shadow)
+\end{itemize}
+
+\paragraph{.error - błędy walidacji}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.error {
+  color: #dc2626;  /* czerwony */
+  font-size: 14px;
+  margin-top: 5px;
+}
+\end{lstlisting}
+
+Czerwone komunikaty błędów pod polami formularza.
+
+\paragraph{.errorMessage - komunikat ogólny}\mbox{}
+
+\begin{lstlisting}[language=CSS]
+.errorMessage {
+  background-color: #fef2f2;  /* jasny czerwony */
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 12px;
+  border-radius: 4px;
+}
+\end{lstlisting}
+
+Wyróżniona ramka z komunikatem błędu (np. błąd bazy danych).
+
+\subsection{Responsive Design}
+
+Aplikacja jest responsywna dzięki:
+
+\begin{itemize}
+    \item \textbf{Flexbox} - elastyczny layout dostosowujący się do rozmiaru ekranu
+    \item \textbf{max-width} - ograniczenie szerokości na dużych ekranach
+    \item \textbf{Relative units} - użycie \texttt{em}, \texttt{rem}, \texttt{\%} zamiast stałych pikseli
+    \item \textbf{Mobile-first approach} - bazowe style działają na małych ekranach
+    \item \textbf{Device Breakpoints} - aplikacja nie stosuje \href{https://shebang.pl/css/css-media-queries/}{Media Queries CSS}, ale ich wprowadzenie nie stanowi problemu.
+\end{itemize}
+\newpage

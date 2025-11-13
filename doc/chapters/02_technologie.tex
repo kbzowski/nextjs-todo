@@ -1,0 +1,170 @@
+\section{Wykorzystane technologie}
+
+Niniejszy rozdział omawia technologie wykorzystane w projekcie oraz ich wzajemne relacje i role w architekturze aplikacji.
+
+\subsection{Next.js 16}
+
+Next.js to framework React stworzony przez firmę Vercel, umożliwiający budowę aplikacji webowych z renderowaniem po stronie serwera (SSR), generowaniem stron statycznych (SSG) oraz hybrydowym podejściem łączącym obie metody.
+
+\subsubsection{App Router}
+
+W wersji 13 Next.js wprowadził nowy system routingu o nazwie \textit{App Router}, który zastąpił poprzedni \textit{Pages Router}. Nasza aplikacja wykorzystuje właśnie App Router, który oferuje następujące korzyści:
+
+\begin{itemize}
+    \item \textbf{File-system based routing} - routing oparty na strukturze plików i katalogów
+    \item \textbf{Server Components} - możliwość renderowania komponentów wyłącznie po stronie serwera
+    \item \textbf{Nested Layouts} - zagnieżdżone layouty współdzielone między stronami
+    \item \textbf{Server Actions} - funkcje uruchamiane po stronie serwera, wywoływane z komponentów klienckich
+    \item \textbf{Streaming} - progresywne renderowanie elementów strony
+\end{itemize}
+
+\subsubsection{Kluczowe koncepcje Next.js wykorzystane w projekcie}
+
+\paragraph{Renderowanie po stronie serwera (SSR)}
+Strona główna aplikacji (\texttt{app/page.tsx}) jest renderowana po stronie serwera. Oznacza to, że HTML jest generowany na serwerze przy każdym żądaniu, a następnie wysyłany do przeglądarki. Zapewnia to:
+
+\begin{itemize}
+    \item Lepsze SEO (wyszukiwarki otrzymują gotowy HTML)
+    \item Szybsze pierwsze wyświetlenie treści (FCP - First Contentful Paint)
+    \item Dostęp do aktualnych danych z bazy przy każdym renderowaniu
+\end{itemize}
+
+\paragraph{Server Actions}
+Server Actions to funkcje uruchamiane po stronie serwera, które mogą być bezpośrednio wywoływane z komponentów klienckich. Eliminuje to konieczność tworzenia osobnych endpointów API. W naszej aplikacji wszystkie operacje CRUD (Create, Read, Update, Delete) są zrealizowane jako Server Actions w pliku \texttt{app/actions.ts}.
+
+\subsection{React 19}
+
+React to biblioteka JavaScript stworzona przez firmę Meta (dawniej Facebook) do budowy interfejsów użytkownika. React wprowadza koncepcję komponentów - samodzielnych, wielokrotnego użytku bloków UI.
+
+\subsubsection{Server Components vs Client Components}
+
+React 19 wprowadza nową dychotomię komponentów:
+
+\begin{itemize}
+    \item \textbf{Server Components} (domyślnie w App Router) - komponenty renderowane wyłącznie na serwerze. Nie zawierają JavaScript w bundle'u klienta, co zmniejsza rozmiar aplikacji. Mogą bezpośrednio komunikować się z bazą danych.
+
+    \item \textbf{Client Components} (oznaczone dyrektywą \texttt{'use client'}) - komponenty renderowane zarówno na serwerze (initial render), jak i w przeglądarce. Mogą korzystać z hooków React oraz obsługiwać interakcje użytkownika (kliknięcia, wprowadzanie tekstu itp.).
+\end{itemize}
+
+W naszej aplikacji:
+\begin{itemize}
+    \item Server Components: \texttt{app/page.tsx}, \texttt{app/layout.tsx}, \texttt{app/add/page.tsx}, \texttt{app/edit/[id]/page.tsx}
+    \item Client Components: \texttt{app/components/TodoItem.tsx}, \texttt{app/components/TodoForm.tsx}
+\end{itemize}
+
+\subsubsection{Hooki React wykorzystane w projekcie}
+
+\paragraph{useActionState}
+Hook wprowadzony w React 19, umożliwiający obsługę Server Actions w formularzach. Zwraca stan formularza oraz funkcję akcji. Wykorzystany w komponencie \texttt{TodoForm.tsx} do obsługi dodawania i edycji zadań.
+
+Przykład użycia:
+\begin{lstlisting}[language=TypeScript, caption={Wykorzystanie useActionState w TodoForm}]
+const [state, formAction] = useActionState(saveTodo, initialState);
+\end{lstlisting}
+
+\subsection{TypeScript 5}
+
+TypeScript to typowany nadzbiór JavaScript, który kompiluje się do czystego JavaScript. Wprowadza statyczne typowanie, co pozwala na wykrywanie błędów już na etapie kompilacji, a nie w runtime.
+
+\subsubsection{Korzyści z TypeScript}
+
+\begin{enumerate}
+    \item \textbf{Bezpieczeństwo typów} - kompilator wykrywa niezgodności typów przed uruchomieniem aplikacji
+    \item \textbf{Lepsze podpowiedzi IDE} - edytor kodu zna typy zmiennych i może oferować dokładne autocomplete
+    \item \textbf{Dokumentacja w kodzie} - typy służą jako dokumentacja interfejsów i funkcji
+    \item \textbf{Łatwiejszy refactoring} - IDE może bezpiecznie zmienić nazwę zmiennej we wszystkich miejscach
+\end{enumerate}
+
+\subsubsection{Przykłady typowania w projekcie}
+
+W projekcie wykorzystano różne konstrukcje TypeScript:
+
+\begin{itemize}
+    \item \textbf{Typy interfejsów} - definiowanie kształtu obiektów (np. \texttt{TodoItemProps})
+    \item \textbf{Typy generowane przez Prisma} - automatycznie generowane typy modeli bazy danych (np. \texttt{Todo})
+    \item \textbf{Typy zwracane przez funkcje} - np. \texttt{Promise<FormState>}
+    \item \textbf{Typy pomocnicze} - np. \texttt{type FormState} w \texttt{actions.ts}
+\end{itemize}
+
+\subsection{Prisma ORM}
+
+Prisma to nowoczesny ORM (Object-Relational Mapping) dla Node.js i TypeScript. ORM to narzędzie umożliwiające pracę z bazą danych przy użyciu obiektów w kodzie, zamiast pisania czystego SQL.
+
+\subsubsection{Zalety Prisma}
+
+\begin{itemize}
+    \item \textbf{Type-safe database access} - pełne typowanie zapytań do bazy danych
+    \item \textbf{Migracje} - automatyczne generowanie i zarządzanie migracjami schematu bazy
+    \item \textbf{Intuitive API} - prostsze zapytania niż czysty SQL
+    \item \textbf{Prisma Studio} - graficzny interfejs do przeglądania i edycji danych
+\end{itemize}
+
+\subsubsection{Komponenty Prisma}
+
+\begin{enumerate}
+    \item \textbf{Prisma Schema} (\texttt{prisma/schema.prisma}) - deklaratywna definicja modeli bazy danych
+    \item \textbf{Prisma Client} - automatycznie generowany, typowany klient bazy danych
+    \item \textbf{Prisma Migrate} - system migracji bazy danych
+\end{enumerate}
+
+\subsection{SQLite}
+
+SQLite to lekka, bezserwerowa baza danych SQL, która przechowuje dane w pojedynczym pliku na dysku. Idealnie nadaje się do aplikacji deweloperskich, prototypów oraz małych projektów.
+
+\subsubsection{Zalety SQLite w kontekście projektu}
+
+\begin{itemize}
+    \item Nie wymaga instalacji osobnego serwera bazy danych
+    \item Łatwa konfiguracja i przenoszenie projektu
+    \item Wystarczająca dla aplikacji o małym i średnim ruchu
+    \item Pełna zgodność ze standardem SQL
+\end{itemize}
+
+W produkcyjnej aplikacji SQLite można łatwo zastąpić inną bazą danych (PostgreSQL, MySQL) zmieniając jedynie konfigurację Prisma.
+
+\subsection{Zod}
+
+Zod to biblioteka do walidacji danych i tworzenia schematów w TypeScript. Umożliwia deklaratywne definiowanie kształtu danych oraz walidację wartości w runtime.
+
+\subsubsection{Wykorzystanie Zod w projekcie}
+
+W pliku \texttt{app/actions.ts} zdefiniowano schemat walidacji zadania:
+
+\begin{lstlisting}[language=TypeScript, caption={Schemat walidacji Zod}]
+const todoSchema = z.object({
+  text: z.string()
+    .min(1, 'Treść zadania jest wymagana')
+    .max(200, 'Treść zadania jest za długa (max 200 znaków)')
+});
+\end{lstlisting}
+
+Schemat ten zapewnia, że pole \texttt{text} jest niepustym ciągiem znaków o długości nie przekraczającej 200 znaków. W przypadku niepowodzenia walidacji, zwracane są odpowiednie komunikaty błędów.
+
+\subsection{CSS Modules}
+
+CSS Modules to system stylowania, który automatycznie generuje unikalne nazwy klas CSS, zapobiegając konfliktom nazw. Każdy plik \texttt{.module.css} jest traktowany jako osobny moduł.
+
+\subsubsection{Zalety CSS Modules}
+
+\begin{itemize}
+    \item \textbf{Scoped styles} - style są automatycznie ograniczone do komponentu
+    \item \textbf{Brak konfliktów nazw} - unikalne nazwy klas generowane automatycznie
+    \item \textbf{Explicit dependencies} - komponenty jawnie importują swoje style
+    \item \textbf{Eliminacja martwego kodu} - nieużywane style można łatwo wykryć
+\end{itemize}
+
+\subsubsection{Przykład użycia}
+
+\begin{lstlisting}[language=TypeScript, caption={Import i użycie CSS Modules}]
+import styles from './page.module.css';
+
+// Użycie w JSX
+<div className={styles.container}>
+  <h1>Lista zadań</h1>
+</div>
+\end{lstlisting}
+
+\subsection{ESLint}
+
+ESLint to narzędzie do statycznej analizy kodu JavaScript/TypeScript, które pomaga wykrywać problemy i egzekwować spójny styl kodowania. Projekt wykorzystuje konfigurację \texttt{eslint-config-next}, która zawiera zestaw reguł zalecanych dla projektów Next.js.
+\newpage

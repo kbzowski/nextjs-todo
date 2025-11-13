@@ -1,0 +1,427 @@
+\section{Komponenty klienckie (Client Components)}
+
+Client Components to komponenty React, które wykonują się zarówno na serwerze (initial render), jak i w przeglądarce (hydration oraz dalsze interakcje). Są niezbędne do obsługi interaktywności użytkownika.
+
+\subsection{Dyrektywa 'use client'}
+
+Aby oznaczyć komponent jako Client Component, należy dodać dyrektywę \texttt{'use client'} na początku pliku:
+
+\begin{lstlisting}[language=TypeScript, caption={Dyrektywa use client}]
+'use client';
+
+import { useState } from 'react';
+
+export function MyComponent() {
+  const [count, setCount] = useState(0);
+  // ...
+}
+\end{lstlisting}
+
+\subsection{Kiedy używać Client Components?}
+
+Client Components są wymagane gdy komponent:
+
+\begin{itemize}
+    \item Używa hooków React (\texttt{useState}, \texttt{useEffect}, \texttt{useActionState}, etc.)
+    \item Obsługuje zdarzenia użytkownika (\texttt{onClick}, \texttt{onChange}, etc.)
+    \item Korzysta z API przeglądarki (\texttt{window}, \texttt{localStorage}, etc.)
+    \item Używa bibliotek zależnych od przeglądarki
+\end{itemize}
+
+\subsection{TodoItem - komponent pojedynczego zadania}
+
+Komponent \texttt{TodoItem} wyświetla pojedyncze zadanie na liście i obsługuje interakcje użytkownika (zaznaczanie, usuwanie).
+
+\begin{lstlisting}[language=TypeScript, caption={Komponent TodoItem - pełny kod}, label={lst:todo-item}]
+'use client';
+
+import Link from 'next/link';
+import { deleteTodo, toggleTodo } from '../actions';
+import styles from '../page.module.css';
+import {formatDate} from '@/lib/formatDate';
+
+type TodoItemProps = {
+  id: number;
+  text: string;
+  completed: boolean;
+  createdAt: Date;
+};
+
+export function TodoItem({ id, text, completed, createdAt }: TodoItemProps) {
+  const handleToggle = async () => {
+    await toggleTodo(id);
+  };
+
+  const handleDelete = async () => {
+    await deleteTodo(id);
+  };
+
+  const formattedDate = formatDate(createdAt);
+
+  return (
+    <div className={styles.todoItem}>
+      <label className={styles.todoCheckbox}>
+        <input
+          type="checkbox"
+          checked={completed}
+          onChange={handleToggle}
+        />
+        <span className={completed ? styles.completed : ''}>{text}</span>
+      </label>
+      <div className={styles.todoMeta}>
+        <span className={styles.todoDate}>{formattedDate}</span>
+        <Link href={`/edit/${id}`} className={styles.editBtn}>
+          Edytuj
+        </Link>
+        <button onClick={handleDelete} className={styles.deleteBtn}>
+          Usuń
+        </button>
+      </div>
+    </div>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/components/TodoItem.tsx:1-48}
+
+\subsubsection{Analiza kodu}
+
+\paragraph{Dyrektywa use client}
+
+Kod: \texttt{'use client';}
+
+Oznacza komponent jako Client Component. Wymagane, ponieważ komponent używa event handlerów.
+
+\paragraph{Definicja typów props}
+
+TypeScript type definiujący kształt props przekazywanych do komponentu:
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Definicja typu props TodoItem}]
+type TodoItemProps = {
+  id: number;
+  text: string;
+  completed: boolean;
+  createdAt: Date;
+};
+\end{lstlisting}
+
+Zapewnia type safety - kompilator wykryje niezgodności typów.
+
+
+\paragraph{Event handlery}
+
+Odpowiedzialne za obsługę zdarzeń (akcja po kliknięciu w element)
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Funkcje obsługi zdarzeń}]
+const handleToggle = async () => {
+  await toggleTodo(id);
+};
+
+const handleDelete = async () => {
+  await deleteTodo(id);
+};
+\end{lstlisting}
+
+Funkcje obsługujące zdarzenia użytkownika. Są asynchroniczne, ponieważ wywołują Server Actions.
+
+\begin{itemize}
+    \item \textbf{handleToggle}: wywoływana przy zmianie stanu checkboxa. Wywołuje Server Action \texttt{toggleTodo(id)}, która zmienia stan \texttt{completed} zadania w bazie danych.
+    \item \textbf{handleDelete}: wywoływana przy kliknięciu przycisku "Usuń". Wywołuje Server Action \texttt{deleteTodo(id)}, która usuwa zadanie z bazy.
+\end{itemize}
+
+\paragraph{Formatowanie daty}\mbox{}
+
+Wywołanie funkcji pomocniczej formatującej datę do czytelnej formy (DD/MM/YYYY HH:mm).
+
+\begin{lstlisting}[language=TypeScript, caption={Formatowanie daty utworzenia}]
+const formattedDate = formatDate(createdAt);
+\end{lstlisting}
+
+
+
+\paragraph{Checkbox i obsługa onChange}\mbox{}
+
+Checkbox kontrolowany przez prop \texttt{completed}. Event \texttt{onChange} wywołuje \texttt{handleToggle}.
+
+\begin{lstlisting}[language=TypeScript, caption={Checkbox zmiany stanu zadania}]
+<input
+  type="checkbox"
+  checked={completed}
+  onChange={handleToggle}
+/>
+\end{lstlisting}
+
+
+\paragraph{Warunkowe stylowanie}\mbox{}
+
+Jeśli zadanie jest ukończone (\texttt{completed === true}), dodawana jest klasa CSS \texttt{styles.completed}, która przekreśla tekst.
+
+\begin{lstlisting}[language=TypeScript, caption={Warunkowe dodawanie klasy CSS}]
+<span className={completed ? styles.completed : ''}>
+  {text}
+</span>
+\end{lstlisting}
+
+
+
+\paragraph{Przycisk usuwania}\mbox{}
+
+Przycisk obsługujący event \texttt{onClick}. Wywołuje \texttt{handleDelete}.
+
+\begin{lstlisting}[language=TypeScript, caption={Przycisk usuwania zadania}]
+<button onClick={handleDelete} className={styles.deleteBtn}>
+  Usuń
+</button>
+\end{lstlisting}
+
+\subsection{TodoForm - formularz dodawania/edycji}
+
+Komponent \texttt{TodoForm} to uniwersalny formularz działający w dwóch trybach: \texttt{'add'} (dodawanie) oraz \texttt{'edit'} (edycja).
+
+\begin{lstlisting}[language=TypeScript, caption={Komponent TodoForm - pełny kod}, label={lst:todo-form}]
+'use client';
+
+import Link from 'next/link';
+import { useActionState } from 'react';
+import { type FormState, saveTodo } from '@/app/actions';
+import type { Todo } from '@prisma/client';
+import styles from './TodoForm.module.css';
+
+interface TodoFormProps {
+  mode: 'add' | 'edit';
+  todo?: Todo;
+}
+
+const initialState: FormState = {};
+
+export function TodoForm({ mode, todo }: TodoFormProps) {
+  const [state, formAction] = useActionState(saveTodo, initialState);
+
+  return (
+    <form action={formAction} className={styles.todoForm}>
+      {todo && <input type="hidden" name="id" value={todo.id} />}
+
+      <div className={styles.formGroup}>
+        <label htmlFor="text">Treść zadania:</label>
+        <input
+          type="text"
+          id="text"
+          name="text"
+          defaultValue={todo?.text || ''}
+          placeholder="Wpisz treść zadania..."
+          maxLength={200}
+          autoFocus
+          aria-describedby="text-error"
+        />
+        {state.errors?.text && (
+          <div id="text-error" className={styles.error}>
+            {state.errors.text.map((error, index) => (
+              <p key={index}>{error}</p>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {state.message && (
+        <div className={styles.errorMessage}>
+          <p>{state.message}</p>
+        </div>
+      )}
+
+      <div className={styles.formActions}>
+        <button type="submit" className={styles.submitBtn}>
+          {mode === 'add' ? 'Dodaj zadanie' : 'Zapisz zmiany'}
+        </button>
+        <Link href="/" className={styles.cancelBtn}>
+          Anuluj
+        </Link>
+      </div>
+    </form>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/components/TodoForm.tsx:1-61}
+
+\subsubsection{Analiza kodu}
+
+\paragraph{Props interface}\mbox{}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Interface props TodoForm}]
+interface TodoFormProps {
+  mode: 'add' | 'edit';
+  todo?: Todo;
+}
+\end{lstlisting}
+
+Interface definiujący props:
+\begin{itemize}
+    \item \texttt{mode}: typ literalny - tylko 'add' lub 'edit'
+    \item \texttt{todo}: opcjonalny obiekt typu Todo (wymagany tylko w trybie edit)
+\end{itemize}
+
+\paragraph{Hook useActionState}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Użycie hooka useActionState}]
+const [state, formAction] = useActionState(saveTodo, initialState);
+\end{lstlisting}
+
+Hook React 19 przeznaczony do pracy z Server Actions w formularzach. Przyjmuje:
+\begin{itemize}
+    \item \texttt{saveTodo} - Server Action do wywołania przy submit
+    \item \texttt{initialState} - początkowy stan formularza (pusty obiekt)
+\end{itemize}
+
+Zwraca:
+\begin{itemize}
+    \item \texttt{state} - aktualny stan formularza (zawiera błędy walidacji lub komunikaty)
+    \item \texttt{formAction} - funkcja do użycia jako \texttt{action} w formularzu
+\end{itemize}
+
+\paragraph{Formularz z action}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Formularz z Server Action}]
+<form action={formAction} className={styles.todoForm}>
+\end{lstlisting}
+
+Atrybut \texttt{action} wskazuje na funkcję Server Action. Po submit formularza Next.js automatycznie wywołuje \texttt{formAction} z danymi formularza.
+
+\paragraph{Ukryte pole ID}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Warunkowe ukryte pole ID}]
+{todo && <input type="hidden" name="id" value={todo.id} />}
+\end{lstlisting}
+
+W trybie edycji dodawane jest ukryte pole z ID zadania. Server Action używa tego ID do rozróżnienia operacji dodawania od edycji.
+
+\paragraph{Pole tekstowe z defaultValue}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Input tekstowy formularza}]
+<input
+  type="text"
+  id="text"
+  name="text"
+  defaultValue={todo?.text || ''}
+  placeholder="Wpisz treść zadania..."
+  maxLength={200}
+  autoFocus
+/>
+\end{lstlisting}
+
+Atrybuty:
+\begin{itemize}
+    \item \texttt{name="text"} - nazwa pola używana w FormData
+    \item \texttt{defaultValue} - w trybie edit zawiera tekst zadania, w trybie add pusty string
+    \item \texttt{maxLength=\{200\}} - walidacja HTML ograniczająca długość do 200 znaków
+    \item \texttt{autoFocus} - automatyczne ustawienie focus na polu po załadowaniu strony
+\end{itemize}
+
+\paragraph{Wyświetlanie błędów walidacji}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Wyświetlanie błędów walidacji pola}]
+{state.errors?.text && (
+  <div id="text-error" className={styles.error}>
+    {state.errors.text.map((error, index) => (
+      <p key={index}>{error}</p>
+    ))}
+  </div>
+)}
+\end{lstlisting}
+
+Jeśli Server Action zwróci błędy walidacji, są one wyświetlane pod polem. Każdy błąd jest osobnym paragrafem.
+
+\paragraph{Komunikat ogólny błędu}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Wyświetlanie komunikatu błędu}]
+{state.message && (
+  <div className={styles.errorMessage}>
+    <p>{state.message}</p>
+  </div>
+)}
+\end{lstlisting}
+
+Wyświetlanie ogólnego komunikatu błędu (np. błąd bazy danych), jeśli istnieje w \texttt{state}.
+
+\paragraph{Warunkowy tekst przycisku}
+
+
+\mbox{}
+\begin{lstlisting}[language=TypeScript, caption={Przycisk submit z warunkowym tekstem}]
+<button type="submit">
+  {mode === 'add' ? 'Dodaj zadanie' : 'Zapisz zmiany'}
+</button>
+\end{lstlisting}
+
+Tekst przycisku zmienia się w zależności od trybu formularza.
+
+\subsection{Interakcja Server Actions z Client Components}
+
+Client Components mogą wywoływać Server Actions na dwa sposoby:
+
+\subsubsection{1. Poprzez event handlery}
+
+\begin{lstlisting}[language=TypeScript, caption={Wywołanie Server Action z event handlera}]
+'use client';
+
+import { deleteTodo } from '../actions';
+
+export function TodoItem({ id }: { id: number }) {
+  const handleDelete = async () => {
+    await deleteTodo(id);  // Wywołanie Server Action
+  };
+
+  return <button onClick={handleDelete}>Usuń</button>;
+}
+\end{lstlisting}
+
+Przykład: TodoItem wywołuje \texttt{toggleTodo} i \texttt{deleteTodo}
+
+\subsubsection{2. Poprzez atrybut action formularza}
+
+\begin{lstlisting}[language=TypeScript, caption={Server Action jako action formularza}]
+'use client';
+
+import { useActionState } from 'react';
+import { saveTodo } from '../actions';
+
+export function TodoForm() {
+  const [state, formAction] = useActionState(saveTodo, {});
+
+  return (
+    <form action={formAction}>
+      {/* pola formularza */}
+    </form>
+  );
+}
+\end{lstlisting}
+
+Przykład: TodoForm używa \texttt{saveTodo} jako action
+
+\subsection{Progressive Enhancement}
+
+Formularze z Server Actions działają również bez JavaScript (progressive enhancement). Jeśli użytkownik wyłączy JavaScript:
+
+\begin{itemize}
+    \item Formularz nadal można wysłać (zwykły POST request)
+    \item Server Action zostanie wykonana po stronie serwera
+    \item Strona zostanie przeładowana z nowymi danymi
+\end{itemize}
+
+To zwiększa dostępność i niezawodność aplikacji.
+\newpage

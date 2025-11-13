@@ -1,0 +1,260 @@
+\section{System routingu Next.js}
+
+Routing to mechanizm mapowania URL na odpowiednie komponenty i strony aplikacji. Next.js wprowadza koncepcję \textit{file-system based routing} - struktury URL są definiowane przez strukturę plików i katalogów.
+
+\subsection{App Router vs Pages Router}
+
+Next.js oferuje dwa systemy routingu:
+
+\begin{itemize}
+    \item \textbf{Pages Router} - starszy system oparty na katalogu \texttt{pages/}
+    \item \textbf{App Router} - nowszy system oparty na katalogu \texttt{app/} (używany w projekcie)
+\end{itemize}
+
+Nasza aplikacja wykorzystuje \textbf{App Router}, wprowadzony w Next.js 13, który oferuje zaawansowane funkcjonalności takie jak Server Components, nested layouts oraz streaming.
+
+\subsection{Konwencje nazewnictwa}
+
+App Router wykorzystuje specjalne nazwy plików do definiowania różnych typów zasobów:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Nazwa pliku} & \textbf{Przeznaczenie} \\
+\hline
+\texttt{page.tsx} & Komponent strony dostępnej pod danym URL \\
+\texttt{layout.tsx} & Layout współdzielony przez strony w danym segmencie \\
+\texttt{loading.tsx} & Komponent wyświetlany podczas ładowania \\
+\texttt{error.tsx} & Komponent obsługi błędów \\
+\texttt{not-found.tsx} & Strona 404 (nie znaleziono) \\
+\texttt{route.ts} & API Route Handler \\
+\hline
+\end{tabular}
+\caption{Specjalne nazwy plików w App Router}
+\end{table}
+
+W naszym projekcie wykorzystujemy pliki \texttt{page.tsx} oraz \texttt{layout.tsx}.
+
+\subsection{Mapowanie struktury na URL}
+
+Struktura katalogów w \texttt{app/} bezpośrednio definiuje strukturę URL aplikacji.
+
+\subsubsection{Przykłady mapowania}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|l|}
+\hline
+\textbf{Plik} & \textbf{URL} & \textbf{Opis} \\
+\hline
+\texttt{app/page.tsx} & \texttt{/} & Strona główna \\
+\texttt{app/add/page.tsx} & \texttt{/add} & Strona dodawania zadania \\
+\texttt{app/edit/[id]/page.tsx} & \texttt{/edit/:id} & Strona edycji (dynamiczna) \\
+\hline
+\end{tabular}
+\caption{Mapowanie plików na URL}
+\end{table}
+
+\subsection{Dynamic Routes - trasy dynamiczne}
+
+Trasy dynamiczne umożliwiają tworzenie stron z parametrami w URL. Parametr dynamiczny definiuje się za pomocą nawiasów kwadratowych w nazwie katalogu.
+
+\subsubsection{Przykład: app/edit/[id]/page.tsx}
+
+Katalog \texttt{[id]} oznacza parametr dynamiczny. URL takie jak:
+\begin{itemize}
+    \item \texttt{/edit/1}
+    \item \texttt{/edit/42}
+    \item \texttt{/edit/xyz}
+\end{itemize}
+
+będą obsługiwane przez ten sam komponent, a wartość parametru będzie dostępna w komponencie.
+
+\subsubsection{Dostęp do parametrów}
+
+Parametry dynamiczne są przekazywane do komponentu strony jako props:
+
+\begin{lstlisting}[language=TypeScript, caption={Dostęp do parametrów dynamicznych}]
+export default async function EditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  // Konwersja string na number
+  const todoId = parseInt(id, 10);
+
+  // Pobranie zadania z bazy
+  const todo = await getTodoById(todoId);
+
+  // ...
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/edit/[id]/page.tsx}
+
+\paragraph{Uwaga o typach}
+W Next.js 15+, parametry są zwracane jako \texttt{Promise}, co wymaga użycia \texttt{await} przed dostępem do wartości. Jest to związane z asynchronicznym renderowaniem.
+
+\subsection{Layout - wspólny szablon}
+
+Pliki \texttt{layout.tsx} definiują wspólny szablon HTML otaczający strony. Layout jest współdzielony przez wszystkie strony w danym segmencie i jego podsegmentach.
+
+\subsubsection{Root Layout}
+
+Plik \texttt{app/layout.tsx} to \textit{root layout} - główny szablon całej aplikacji. Musi zawierać tagi \texttt{<html>} oraz \texttt{<body>}.
+
+\begin{lstlisting}[language=TypeScript, caption={Root layout aplikacji}]
+import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'TODO List',
+  description: 'Aplikacja do zarządzania zadaniami',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pl">
+      <body>{children}</body>
+    </html>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/layout.tsx}
+
+\subsubsection{Analiza root layout}
+
+\begin{itemize}
+    \item \texttt{metadata} - obiekt definiujący metadane strony (tytuł, opis, używane przez wyszukiwarki i karty social media)
+
+    \item \texttt{lang="pl"} - atrybut języka dokumentu HTML (polski)
+
+    \item \texttt{children} - prop zawierający zawartość renderowanej strony. Layout otacza wszystkie strony swoją strukturą.
+
+    \item Import \texttt{globals.css} - globalne style CSS stosowane do całej aplikacji
+\end{itemize}
+
+\subsection{Nawigacja między stronami}
+
+Next.js udostępnia komponent \texttt{Link} do nawigacji po aplikacji bez przeładowania strony (client-side navigation).
+
+\subsubsection{Użycie komponentu Link}
+
+\begin{lstlisting}[language=TypeScript, caption={Nawigacja z użyciem Link}]
+import Link from 'next/link';
+
+// Proste linki
+<Link href="/">Strona główna</Link>
+<Link href="/add">Dodaj zadanie</Link>
+
+// Link z dynamicznym parametrem
+<Link href={`/edit/${id}`}>Edytuj</Link>
+\end{lstlisting}
+
+Przykłady z projektu:
+\begin{itemize}
+    \item W \texttt{app/page.tsx}: link do \texttt{/add}
+    \item W \texttt{app/components/TodoItem.tsx}: link do \texttt{/edit/\{id\}}
+    \item W formularzach: link powrotu do \texttt{/}
+\end{itemize}
+
+Odwołania do plików:
+\begin{itemize}
+    \item \texttt{app/page.tsx:24-26} - przycisk "Dodaj nowe zadanie"
+    \item \texttt{app/components/TodoItem.tsx:38-40} - przycisk "Edytuj"
+\end{itemize}
+
+\subsection{Nawigacja programowa}
+
+Oprócz komponentu \texttt{Link}, Next.js oferuje funkcje do nawigacji programowej:
+
+\subsubsection{redirect()}
+
+Funkcja \texttt{redirect()} umożliwia przekierowanie użytkownika na inny URL. Używana w Server Actions po zakończeniu operacji.
+
+\begin{lstlisting}[language=TypeScript, caption={Użycie redirect() w Server Action}]
+import { redirect } from 'next/navigation';
+
+export async function saveTodo(prevState: FormState, formData: FormData) {
+  // ... walidacja i zapis do bazy ...
+
+  revalidatePath('/');
+  redirect('/');  // Przekierowanie na stronę główną
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:72-73}
+
+\subsubsection{useRouter() (client-side)}
+
+W komponentach klienckich można użyć hooka \texttt{useRouter()}:
+
+\begin{lstlisting}[language=TypeScript, caption={Client-side routing z useRouter}]
+'use client';
+import { useRouter } from 'next/navigation';
+
+function MyComponent() {
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push('/add');
+  };
+
+  return <button onClick={handleClick}>Dodaj</button>;
+}
+\end{lstlisting}
+
+\subsection{Cache Revalidation}
+
+Next.js automatycznie cache'uje renderowane strony i dane. Funkcja \texttt{revalidatePath()} pozwala unieważnić cache dla danej ścieżki.
+
+\begin{lstlisting}[language=TypeScript, caption={Revalidacja cache}]
+import { revalidatePath } from 'next/cache';
+
+export async function toggleTodo(id: number) {
+  // ... operacja na bazie danych ...
+
+  revalidatePath('/');  // Unieważnia cache strony głównej
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:92}
+
+Po wywołaniu \texttt{revalidatePath('/')}, przy następnym odwiedzeniu strony głównej Next.js ponownie wyrenderuje ją po stronie serwera z aktualnymi danymi z bazy.
+
+\subsection{Struktura routingu w projekcie}
+
+Aplikacja TODO posiada trzy główne trasy:
+
+\begin{enumerate}
+    \item \textbf{Strona główna (/)}: wyświetla listę wszystkich zadań
+    \begin{itemize}
+        \item Plik: \texttt{app/page.tsx}
+        \item Typ: Server Component
+        \item Pobiera dane z bazy przy każdym renderowaniu
+    \end{itemize}
+
+    \item \textbf{Dodawanie zadania (/add)}: formularz dodawania nowego zadania
+    \begin{itemize}
+        \item Plik: \texttt{app/add/page.tsx}
+        \item Typ: Server Component (kontener dla Client Component)
+        \item Zawiera komponent TodoForm w trybie 'add'
+    \end{itemize}
+
+    \item \textbf{Edycja zadania (/edit/[id])}: formularz edycji istniejącego zadania
+    \begin{itemize}
+        \item Plik: \texttt{app/edit/[id]/page.tsx}
+        \item Typ: Server Component z dynamic route
+        \item Pobiera dane zadania z bazy na podstawie parametru id
+        \item Zawiera komponent TodoForm w trybie 'edit'
+    \end{itemize}
+\end{enumerate}
+\newpage

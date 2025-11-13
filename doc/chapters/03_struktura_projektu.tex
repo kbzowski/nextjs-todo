@@ -1,0 +1,179 @@
+\section{Struktura projektu}
+
+Niniejszy rozdział przedstawia organizację plików i katalogów w projekcie. Zrozumienie struktury projektu jest kluczowe dla efektywnej pracy z aplikacją Next.js.
+
+\subsection{Drzewo katalogów}
+
+Poniżej przedstawiono kompletną strukturę projektu (z pominięciem katalogów \texttt{node\_modules} oraz \texttt{.next}):
+
+\begin{lstlisting}[caption={Struktura katalogów projektu}, basicstyle=\ttfamily\small, numbers=none]
+nextjs-todo/
+|
++-- app/                    # Katalog glowny aplikacji (App Router)
+|   |
+|   +-- components/         # Komponenty React wielokrotnego uzytku
+|   |   +-- TodoForm.tsx
+|   |   +-- TodoForm.module.css
+|   |   +-- TodoItem.tsx
+|   |   +-- TodoItem.module.css
+|   |
+|   +-- add/                # Strona dodawania zadania
+|   |   +-- page.tsx
+|   |   +-- add.module.css
+|   |
+|   +-- edit/               # Strona edycji zadania
+|   |   +-- [id]/           # Dynamic route (parametr id)
+|   |       +-- page.tsx
+|   |       +-- edit.module.css
+|   |
+|   +-- actions.ts          # Server Actions (CRUD)
+|   +-- layout.tsx          # Root Layout aplikacji
+|   +-- page.tsx            # Strona glowna (/)
+|   +-- page.module.css     # Style strony glownej
+|   +-- globals.css         # Globalne style CSS
+|   +-- favicon.ico         # Ikona aplikacji
+|
++-- lib/                    # Pliki pomocnicze
+|   +-- prisma.ts           # Singleton Prisma Client
+|   +-- formatDate.ts       # Funkcja formatowania dat
+|   +-- formData.ts         # Narzedzia do obslugi FormData
+|
++-- prisma/                 # Konfiguracja bazy danych
+|   +-- schema.prisma       # Schemat modeli danych
+|   +-- dev.db              # Plik bazy SQLite (development)
+|   +-- migrations/         # Historia migracji bazy
+|
++-- public/                 # Zasoby statyczne
++-- package.json            # Zaleznosci i skrypty npm
++-- package-lock.json       # Lock file (npm)
++-- pnpm-lock.yaml          # Lock file (pnpm)
++-- tsconfig.json           # Konfiguracja TypeScript
++-- next.config.ts          # Konfiguracja Next.js
++-- .env                    # Zmienne srodowiskowe
++-- .gitignore              # Pliki ignorowane przez Git
++-- README.md               # Dokumentacja projektu
+\end{lstlisting}
+
+\subsection{Katalog app/}
+
+Katalog \texttt{app/} to rdzeń aplikacji Next.js wykorzystującej App Router. Jego struktura bezpośrednio wpływa na routing aplikacji.
+
+\subsubsection{Konwencje nazewnictwa}
+
+Next.js wykorzystuje specjalne nazwy plików do określania ich roli:
+
+\begin{itemize}
+    \item \texttt{page.tsx} - definiuje stronę dostępną pod danym URL
+    \item \texttt{layout.tsx} - definiuje layout współdzielony przez strony
+    \item \texttt{loading.tsx} - komponent wyświetlany podczas ładowania (nieużywany w projekcie)
+    \item \texttt{error.tsx} - komponent obsługi błędów (nieużywany w projekcie)
+    \item \texttt{not-found.tsx} - strona 404 (nieużywana w projekcie)
+\end{itemize}
+
+\subsubsection{Routing oparty na plikach}
+
+Struktura katalogów w \texttt{app/} definiuje routing:
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|l|}
+\hline
+\textbf{Ścieżka pliku} & \textbf{URL} \\
+\hline
+\texttt{app/page.tsx} & \texttt{/} \\
+\texttt{app/add/page.tsx} & \texttt{/add} \\
+\texttt{app/edit/[id]/page.tsx} & \texttt{/edit/1}, \texttt{/edit/2}, ... \\
+\hline
+\end{tabular}
+\caption{Mapowanie struktury plików na URL}
+\end{table}
+
+\subsubsection{Dynamic Routes}
+
+Katalog \texttt{app/edit/[id]/} reprezentuje \textit{dynamic route} - trasę z parametrem dynamicznym. Notacja \texttt{[id]} oznacza, że wartość tego segmentu URL jest przekazywana jako parametr do komponentu strony.
+
+Przykład: URL \texttt{/edit/5} zostanie obsłużony przez \texttt{app/edit/[id]/page.tsx}, a parametr \texttt{id} otrzyma wartość \texttt{"5"}.
+
+\subsection{Katalog app/components/}
+
+Katalog \texttt{app/components/} zawiera komponenty React wielokrotnego użytku. Każdy komponent składa się z pliku TypeScript (\texttt{.tsx}) oraz opcjonalnie pliku styli CSS Modules (\texttt{.module.css}).
+
+\subsubsection{TodoItem.tsx}
+
+Komponent wyświetlający pojedyncze zadanie na liście. Jest to komponent kliencki (\texttt{'use client'}), ponieważ obsługuje interakcje użytkownika (zaznaczanie checkbox, klikanie przycisków).
+
+Odwołanie do pliku: \texttt{app/components/TodoItem.tsx:1-48}
+
+\subsubsection{TodoForm.tsx}
+
+Komponent formularza używany zarówno do dodawania, jak i edycji zadań. Działa w dwóch trybach: \texttt{'add'} oraz \texttt{'edit'}. Również jest komponentem klienckim, ponieważ wykorzystuje hook \texttt{useActionState}.
+
+Odwołanie do pliku: \texttt{app/components/TodoForm.tsx:1-61}
+
+\subsection{Katalog lib/}
+
+Katalog \texttt{lib/} zawiera pliki pomocnicze i narzędziowe wykorzystywane w różnych częściach aplikacji.
+
+\subsubsection{lib/prisma.ts}
+
+Plik eksportujący singleton instancji Prisma Client. Singleton pattern zapewnia, że w całej aplikacji istnieje tylko jedna instancja klienta bazy danych, co jest szczególnie istotne w środowisku deweloperskim (Hot Module Replacement w Next.js mógłby tworzyć wiele połączeń).
+
+Odwołanie do pliku: \texttt{lib/prisma.ts}
+
+\subsubsection{lib/formatDate.ts}
+
+Plik zawierający funkcję \texttt{formatDate()}, która formatuje obiekt \texttt{Date} do czytelnego ciągu znaków w formacie polskim (DD/MM/YYYY HH:mm).
+
+Odwołanie do pliku: \texttt{lib/formatDate.ts}
+
+\subsubsection{lib/formData.ts}
+
+Plik zawierający funkcje pomocnicze do pracy z obiektami \texttt{FormData}, np. ekstrakcję i walidację wartości z formularzy.
+
+\subsection{Katalog prisma/}
+
+Katalog \texttt{prisma/} zawiera wszystkie pliki związane z bazą danych i ORM Prisma.
+
+\subsubsection{prisma/schema.prisma}
+
+Plik definiujący schemat bazy danych - modele, relacje, konfigurację połączenia. Jest to deklaratywny opis struktury bazy danych.
+
+Odwołanie do pliku: \texttt{prisma/schema.prisma:1-16}
+
+\subsubsection{prisma/dev.db}
+
+Plik bazy danych SQLite używany w środowisku deweloperskim. Zawiera wszystkie dane aplikacji.
+
+\subsubsection{prisma/migrations/}
+
+Katalog zawierający historię migracji bazy danych. Każda migracja jest zapisana w osobnym podkatalogu z plikiem SQL opisującym zmiany w schemacie.
+
+\subsection{Pliki konfiguracyjne}
+
+\subsubsection{package.json}
+
+Plik definiujący metadane projektu, zależności (dependencies) oraz skrypty npm.
+
+Odwołanie do pliku: \texttt{package.json:1-30}
+
+\subsubsection{tsconfig.json}
+
+Plik konfiguracyjny kompilatora TypeScript. Definiuje opcje kompilacji, ścieżki aliasów, poziom ścisłości typowania itp.
+
+\subsubsection{next.config.ts}
+
+Plik konfiguracyjny Next.js. W podstawowej wersji projektu jest pusty (używa domyślnej konfiguracji), ale może zawierać zaawansowane opcje konfiguracyjne frameworka.
+
+\subsubsection{.env}
+
+Plik zmiennych środowiskowych. Zawiera konfigurację wrażliwą (np. connection string do bazy danych), która nie powinna być commitowana do repozytorium Git.
+
+Przykładowa zawartość:
+\begin{lstlisting}[caption={Przykładowy plik .env}]
+DATABASE_URL="file:./dev.db"
+\end{lstlisting}
+
+\subsection{Katalog public/}
+
+Katalog \texttt{public/} zawiera zasoby statyczne dostępne publicznie (obrazy, fonty, ikony itp.). Pliki z tego katalogu są serwowane pod ścieżką główną domeny.
+\newpage

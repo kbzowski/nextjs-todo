@@ -1,0 +1,425 @@
+\section{Server Actions - logika biznesowa}
+
+Server Actions to funkcje uruchamiane po stronie serwera, które mogą być wywoływane z komponentów klienckich. Eliminują potrzebę tworzenia osobnych endpointów API (REST, GraphQL) dla prostych operacji CRUD.
+
+\subsection{Wprowadzenie do Server Actions}
+
+Server Actions zostały wprowadzone w React 18 i Next.js 13. Umożliwiają bezpośrednie wywoływanie funkcji serwerowych z komponentów klienckich.
+
+\subsubsection{Zalety Server Actions}
+
+\begin{itemize}
+    \item \textbf{Prostsza architektura} - brak potrzeby tworzenia API layer
+    \item \textbf{Type safety} - pełne typowanie między klientem a serwerem
+    \item \textbf{Automatyczna serializacja} - Next.js obsługuje przekazywanie danych
+    \item \textbf{Progressive enhancement} - działają nawet bez JavaScript
+    \item \textbf{Bezpieczeństwo} - kod wykonywany tylko na serwerze
+\end{itemize}
+
+\subsection{Dyrektywa 'use server'}
+
+Aby oznaczyć funkcję jako Server Action, należy dodać dyrektywę \texttt{'use server'} na początku pliku lub wewnątrz funkcji:
+
+\begin{lstlisting}[language=TypeScript, caption={Dyrektywa use server}]
+'use server';
+
+export async function myServerAction() {
+  // Kod wykonywany tylko na serwerze
+}
+\end{lstlisting}
+
+\subsection{Plik app/actions.ts}
+
+Wszystkie Server Actions w projekcie znajdują się w pliku \texttt{app/actions.ts}. Poniżej przedstawiono pełny kod pliku z szczegółowymi komentarzami.
+
+\begin{lstlisting}[language=TypeScript, caption={Plik app/actions.ts - część 1: imports i schemat}, label={lst:actions-part1}]
+'use server';
+
+import {revalidatePath} from 'next/cache';
+import {redirect} from 'next/navigation';
+import {z} from 'zod';
+import {prisma} from '@/lib/prisma';
+
+/**
+ * Schemat walidacyjny
+ */
+const todoSchema = z.object({
+  text: z.string()
+    .min(1, 'Treść zadania jest wymagana')
+    .max(200, 'Treść zadania jest za długa (max 200 znaków)'),
+});
+
+/**
+ * Typ stanu formularza zwracanego przez server actions
+ */
+export type FormState = {
+  errors?: {
+    text?: string[];
+  };
+  message?: string;
+};
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:1-24}
+
+\subsubsection{Analiza - część 1}
+
+\paragraph{Dyrektywa use server}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+'use server';
+\end{lstlisting}
+
+Oznacza, że wszystkie eksportowane funkcje w pliku są Server Actions.
+
+\paragraph{Schemat walidacyjny Zod}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+const todoSchema = z.object({
+  text: z.string()
+    .min(1, 'Treść zadania jest wymagana')
+    .max(200, 'Treść zadania jest za długa (max 200 znaków)'),
+});
+\end{lstlisting}
+
+Definicja schematu walidacji:
+\begin{itemize}
+    \item Pole \texttt{text} musi być stringiem
+    \item Minimum 1 znak (niepuste)
+    \item Maximum 200 znaków
+    \item Każde naruszenie zwraca odpowiedni komunikat błędu
+\end{itemize}
+
+\paragraph{Typ FormState}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+export type FormState = {
+  errors?: {
+    text?: string[];
+  };
+  message?: string;
+};
+\end{lstlisting}
+
+Typ zwracany przez \texttt{saveTodo}. Zawiera:
+\begin{itemize}
+    \item \texttt{errors} - opcjonalny obiekt z błędami walidacji (każde pole ma tablicę komunikatów)
+    \item \texttt{message} - opcjonalny komunikat ogólny (np. błąd bazy danych)
+\end{itemize}
+
+\subsection{Operacje CRUD}
+
+\subsubsection{getTodos - pobieranie wszystkich zadań}
+
+\begin{lstlisting}[language=TypeScript, caption={Funkcja getTodos}]
+export async function getTodos() {
+    return prisma.todo.findMany({
+        orderBy: {
+            createdAt: 'desc',
+        },
+    });
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:25-31}
+
+\paragraph{Analiza}
+\begin{itemize}
+    \item Zwraca wszystkie zadania z bazy danych
+    \item Sortuje według daty utworzenia malejąco (newest first)
+    \item Zwraca \texttt{Promise<Todo[]>}
+    \item Używana na stronie głównej (\texttt{app/page.tsx})
+\end{itemize}
+
+\subsubsection{getTodoById - pobieranie jednego zadania}
+
+\begin{lstlisting}[language=TypeScript, caption={Funkcja getTodoById}]
+export async function getTodoById(id: number) {
+    return prisma.todo.findUnique({
+        where: {id},
+    });
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:103-107}
+
+\paragraph{Analiza}
+\begin{itemize}
+    \item Przyjmuje parametr \texttt{id} typu number
+    \item Zwraca jedno zadanie lub \texttt{null} jeśli nie znaleziono
+    \item Używana na stronie edycji (\texttt{app/edit/[id]/page.tsx})
+\end{itemize}
+
+\subsubsection{saveTodo - dodawanie lub edycja zadania}
+
+Najważniejsza i najbardziej złożona Server Action w projekcie.
+
+\begin{lstlisting}[language=TypeScript, caption={Funkcja saveTodo - pełny kod}, label={lst:save-todo}]
+export async function saveTodo(
+  prevState: FormState,
+  formData: FormData
+): Promise<FormState> {
+  const validatedFields = todoSchema.safeParse({
+    text: formData.get('text'),
+  });
+
+  if (!validatedFields.success) {
+    return {
+      errors: validatedFields.error.flatten().fieldErrors,
+    };
+  }
+
+  const id = formData.get('id');
+  const isEdit = id && id !== '';
+
+  try {
+    if (isEdit) {
+      await updateTodoInternal(
+        parseInt(id as string, 10),
+        validatedFields.data.text
+      );
+    } else {
+      await addTodoInternal(validatedFields.data.text);
+    }
+  } catch {
+    return {
+      message: `Błąd bazy danych: Nie udało się ${isEdit ? 'zaktualizować' : 'dodać'} zadania.`,
+    };
+  }
+
+  revalidatePath('/');
+  redirect('/');
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:46-74}
+
+\paragraph{Parametry funkcji}
+\begin{itemize}
+    \item \texttt{prevState: FormState} - poprzedni stan formularza (używany przez useActionState)
+    \item \texttt{formData: FormData} - obiekt zawierający dane z formularza
+\end{itemize}
+
+\paragraph{Walidacja danych}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+const validatedFields = todoSchema.safeParse({
+  text: formData.get('text'),
+});
+
+if (!validatedFields.success) {
+  return {
+    errors: validatedFields.error.flatten().fieldErrors,
+  };
+}
+\end{lstlisting}
+
+Proces walidacji:
+\begin{enumerate}
+    \item Pobierz pole \texttt{text} z FormData
+    \item Zwaliduj używając schematu Zod
+    \item Jeśli walidacja się nie powiodła, zwróć błędy
+    \item Błędy są w formacie \texttt{\{text: ['komunikat1', 'komunikat2']\}}
+\end{enumerate}
+
+\paragraph{Rozróżnienie dodawania od edycji}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+const id = formData.get('id');
+const isEdit = id && id !== '';
+\end{lstlisting}
+
+Jeśli FormData zawiera pole \texttt{id}, to jest to operacja edycji. W przeciwnym razie - dodawanie.
+
+\paragraph{Wykonanie operacji}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+try {
+  if (isEdit) {
+    await updateTodoInternal(
+      parseInt(id as string, 10),
+      validatedFields.data.text
+    );
+  } else {
+    await addTodoInternal(validatedFields.data.text);
+  }
+} catch {
+  return {
+    message: `Błąd bazy danych: ...`,
+  };
+}
+\end{lstlisting}
+
+Wywołanie odpowiedniej funkcji wewnętrznej. W przypadku błędu bazy danych, zwraca komunikat.
+
+\paragraph{Revalidation i redirect}\mbox{}
+
+\begin{lstlisting}[language=TypeScript]
+revalidatePath('/');
+redirect('/');
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{revalidatePath('/')} - unieważnia cache strony głównej, wymuszając ponowne pobranie danych
+    \item \texttt{redirect('/')} - przekierowuje użytkownika na stronę główną
+\end{itemize}
+
+\subsubsection{Funkcje wewnętrzne (helper functions)}
+
+\begin{lstlisting}[language=TypeScript, caption={Funkcje pomocnicze addTodoInternal i updateTodoInternal}]
+async function addTodoInternal(text: string): Promise<void> {
+  await prisma.todo.create({
+    data: { text },
+  });
+}
+
+async function updateTodoInternal(id: number, text: string): Promise<void> {
+  await prisma.todo.update({
+    where: { id },
+    data: { text },
+  });
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:33-44}
+
+Te funkcje są wewnętrzne (nie eksportowane), używane tylko przez \texttt{saveTodo}.
+
+\subsubsection{toggleTodo - zmiana statusu zadania}
+
+\begin{lstlisting}[language=TypeScript, caption={Funkcja toggleTodo}]
+export async function toggleTodo(id: number) {
+  const todo = await prisma.todo.findUnique({
+    where: { id },
+  });
+
+  if (!todo) {
+    return { error: 'Todo not found' };
+  }
+
+  await prisma.todo.update({
+    where: { id },
+    data: {
+      completed: !todo.completed,
+    },
+  });
+
+  revalidatePath('/');
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:76-93}
+
+\paragraph{Analiza}
+\begin{enumerate}
+    \item Pobiera zadanie z bazy po ID
+    \item Sprawdza, czy zadanie istnieje
+    \item Aktualizuje pole \texttt{completed} na przeciwną wartość
+    \item Rewaliduje cache strony głównej
+\end{enumerate}
+
+Używana przez komponent TodoItem przy zmianie stanu checkboxa.
+
+\subsubsection{deleteTodo - usuwanie zadania}
+
+\begin{lstlisting}[language=TypeScript, caption={Funkcja deleteTodo}]
+export async function deleteTodo(id: number) {
+  await prisma.todo.delete({
+    where: { id },
+  });
+
+  revalidatePath('/');
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/actions.ts:95-101}
+
+\paragraph{Analiza}
+\begin{enumerate}
+    \item Usuwa zadanie z bazy danych po ID
+    \item Rewaliduje cache strony głównej
+\end{enumerate}
+
+Używana przez komponent TodoItem przy kliknięciu przycisku "Usuń".
+
+\subsection{Mechanizm revalidatePath}
+
+Funkcja \texttt{revalidatePath()} z \texttt{next/cache} unieważnia cache dla danej ścieżki.
+
+\subsubsection{Dlaczego potrzebna revalidation?}
+
+Next.js automatycznie cache'uje renderowane strony dla wydajności. Po zmianie danych w bazie, cache może zawierać nieaktualne dane. \texttt{revalidatePath('/')} informuje Next.js, że cache strony głównej jest nieważny i przy następnym żądaniu należy ponownie wyrenderować stronę.
+
+\subsubsection{Rodzaje revalidation}
+
+\begin{itemize}
+    \item \textbf{revalidatePath(path)} - unieważnia cache dla konkretnej ścieżki
+    \item \textbf{revalidateTag(tag)} - unieważnia cache dla zasobów oznaczonych tagiem
+\end{itemize}
+
+W projekcie używamy \texttt{revalidatePath('/')}, ponieważ wszystkie operacje CRUD wpływają na listę zadań wyświetlaną na stronie głównej.
+
+\subsection{Mechanizm redirect}
+
+Funkcja \texttt{redirect()} z \texttt{next/navigation} przekierowuje użytkownika na inny URL.
+
+\begin{lstlisting}[language=TypeScript, caption={Użycie redirect}]
+import {redirect} from 'next/navigation';
+
+export async function saveTodo(...) {
+  // ... operacja na bazie ...
+
+  revalidatePath('/');
+  redirect('/');  // Przekierowanie na stronę główną
+}
+\end{lstlisting}
+
+\textbf{Uwaga}: \texttt{redirect()} rzuca wyjątek (throw), co przerywa wykonanie funkcji. Dlatego musi być ostatnią instrukcją w Server Action.
+
+\subsection{Type Safety między klientem a serwerem}
+
+Server Actions zapewniają pełne typowanie:
+
+\begin{lstlisting}[language=TypeScript, caption={Type safety w Server Actions}]
+// Server Action zwraca Promise<FormState>
+export async function saveTodo(...): Promise<FormState> { ... }
+
+// Client Component używa tego typu
+import { type FormState, saveTodo } from '@/app/actions';
+
+const [state, formAction] = useActionState<FormState>(saveTodo, {});
+//     ^^^^^ - TypeScript zna typ state
+\end{lstlisting}
+
+Jeśli zmienimy typ zwracany przez Server Action, TypeScript natychmiast zgłosi błędy we wszystkich miejscach użycia.
+
+\subsection{Obsługa błędów}
+
+Server Actions mogą zwracać błędy na dwa sposoby:
+
+\subsubsection{1. Błędy walidacji}
+
+\begin{lstlisting}[language=TypeScript]
+if (!validatedFields.success) {
+  return {
+    errors: validatedFields.error.flatten().fieldErrors,
+  };
+}
+\end{lstlisting}
+
+Zwracany obiekt z polem \texttt{errors}. Client Component wyświetla błędy pod odpowiednimi polami formularza.
+
+\subsubsection{2. Błędy systemowe}
+
+\begin{lstlisting}[language=TypeScript]
+try {
+  // operacja na bazie
+} catch {
+  return {
+    message: 'Błąd bazy danych: ...',
+  };
+}
+\end{lstlisting}
+
+Zwracany obiekt z polem \texttt{message}. Client Component wyświetla ogólny komunikat błędu.
+\newpage

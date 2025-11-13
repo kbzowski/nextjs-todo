@@ -1,0 +1,82 @@
+\section{Wprowadzenie}
+
+\subsection{Cel dokumentu}
+
+Niniejszy dokument ma na celu przedstawienie procesu tworzenia nowoczesnej aplikacji webowej od podstaw. Materiał przeznaczony jest dla studentów informatyki, którzy rozpoczynają swoją przygodę z programowaniem aplikacji internetowych. Dokument szczegółowo omawia wszystkie aspekty budowy aplikacji do zarządzania listą zadań (ang. \textit{TODO list}), od konfiguracji projektu, przez implementację logiki biznesowej, aż po stylowanie interfejsu użytkownika.
+
+\subsection{Czym jest aplikacja webowa?}
+
+Aplikacja webowa to program komputerowy, który działa w przeglądarce internetowej i umożliwia użytkownikowi interakcję poprzez interfejs graficzny dostępny za pośrednictwem protokołu HTTP/HTTPS. W przeciwieństwie do tradycyjnych aplikacji desktopowych, aplikacje webowe nie wymagają instalacji na komputerze użytkownika - wystarczy przeglądarka internetowa.
+
+Współczesne aplikacje webowe można podzielić na kilka kategorii:
+
+\begin{itemize}
+    \item \textbf{Aplikacje Single Page Application (SPA)} - aplikacje działające w ramach jednej strony HTML, gdzie zawartość jest dynamicznie aktualizowana bez przeładowania całej strony. Przykłady: Gmail, Facebook, Twitter.
+
+    \item \textbf{Aplikacje z renderowaniem po stronie serwera (SSR - Server-Side Rendering)} - aplikacje, w których HTML jest generowany na serwerze i wysyłany do przeglądarki. Zapewnia to lepsze SEO oraz szybszy pierwszy rendering strony.
+
+    \item \textbf{Aplikacje hybrydowe} - łączą zalety SPA i SSR, umożliwiając renderowanie niektórych stron na serwerze, a innych w przeglądarce. Taki model został zastosowany w prezentowanej aplikacji.
+\end{itemize}
+
+\subsection{Architektura full-stack}
+
+Aplikacja full-stack składa się z dwóch głównych warstw:
+
+\begin{enumerate}
+    \item \textbf{Frontend (warstwa prezentacji)} - część aplikacji działająca w przeglądarce użytkownika, odpowiedzialna za wyświetlanie interfejsu graficznego i obsługę interakcji użytkownika. W prezentowanej aplikacji frontend został zbudowany przy użyciu biblioteki React oraz frameworka Next.js.
+
+    \item \textbf{Backend (warstwa serwera)} - część aplikacji działająca na serwerze, odpowiedzialna za przetwarzanie logiki biznesowej, dostęp do bazy danych oraz obsługę żądań HTTP. W naszej aplikacji backend został zrealizowany przy użyciu mechanizmu \textit{Server Actions} frameworka Next.js.
+\end{enumerate}
+
+\subsection{Omówienie aplikacji}
+
+Prezentowana aplikacja TODO to pełnofunkcjonalna aplikacja webowa umożliwiająca zarządzanie listą zadań. Użytkownik może:
+
+\begin{itemize}
+    \item Dodawać nowe zadania
+    \item Edytować istniejące zadania
+    \item Oznaczać zadania jako ukończone
+    \item Usuwać zadania z listy
+    \item Przeglądać listę wszystkich zadań posortowanych według daty utworzenia
+\end{itemize}
+
+Aplikacja została zbudowana w oparciu o nowoczesne technologie webowe:
+
+\begin{itemize}
+    \item \textbf{Next.js 16} - framework React do budowy aplikacji webowych
+    \item \textbf{React 19} - biblioteka JavaScript do budowy interfejsów użytkownika
+    \item \textbf{TypeScript 5} - typowany nadzbiór JavaScript zapewniający bezpieczeństwo typów
+    \item \textbf{Prisma ORM} - narzędzie do zarządzania bazą danych
+    \item \textbf{SQLite} - lekka baza danych SQL
+    \item \textbf{CSS Modules} - system stylowania zapewniający izolację styli
+\end{itemize}
+
+\subsection{Wymagania wstępne}
+
+Aby móc samodzielnie zbudować i uruchomić prezentowaną aplikację, student powinien posiadać:
+
+\begin{enumerate}
+    \item Podstawową znajomość języka JavaScript
+    \item Podstawową znajomość HTML i CSS
+    \item Zainstalowane środowisko Node.js (w wersji 18 lub nowszej)
+    \item Zainstalowany menedżer pakietów npm lub pnpm
+    \item Edytor kodu (np. Visual Studio Code, WebStorm)
+    \item Przeglądarkę internetową (np. Chrome, Firefox, Edge)
+\end{enumerate}
+
+\subsection{Struktura dokumentu}
+
+Dokument został podzielony na rozdziały omawiające poszczególne aspekty aplikacji:
+
+\begin{itemize}
+    \item Rozdział 2 omawia wykorzystane technologie i ich rolę w aplikacji
+    \item Rozdział 3 przedstawia strukturę projektu i organizację plików
+    \item Rozdział 4 opisuje pliki konfiguracyjne projektu
+    \item Rozdział 5 omawia model danych i integrację z bazą danych
+    \item Rozdział 6 wyjaśnia system routingu w Next.js
+    \item Rozdziały 7-8 szczegółowo opisują komponenty React
+    \item Rozdział 9 omawia implementację logiki biznesowej
+    \item Rozdział 10 przedstawia stylowanie aplikacji
+    \item Rozdział 11 wyjaśnia proces uruchamiania i developmentu
+\end{itemize}
+\newpage

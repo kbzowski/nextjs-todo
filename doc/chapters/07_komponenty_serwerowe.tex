@@ -1,0 +1,352 @@
+\section{Komponenty serwerowe (Server Components)}
+
+React 19 wraz z Next.js 16 wprowadzają nowy paradygmat - \textit{React Server Components}. Komponenty serwerowe są renderowane wyłącznie po stronie serwera i nie trafiają do bundle JavaScript w przeglądarce.
+
+\subsection{Server Components vs Client Components}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{|p{6.5cm}|p{6.5cm}|}
+\hline
+\textbf{Server Components} & \textbf{Client Components} \\
+\hline
+Renderowane tylko na serwerze & Renderowane na serwerze i kliencie \\
+Nie trafiają do bundle JS & Są częścią bundle JS \\
+Mogą bezpośrednio komunikować się z bazą danych & Nie mogą bezpośrednio łączyć się z bazą \\
+Nie mogą używać hooków React & Mogą używać hooków (useState, useEffect, etc.) \\
+Nie mogą obsługiwać zdarzeń (onClick, onChange) & Obsługują zdarzenia użytkownika \\
+Domyślny typ w App Router & Wymagają dyrektywy 'use client' \\
+\hline
+\end{tabular}
+\caption{Porównanie Server Components i Client Components}
+\end{table}
+
+\subsection{Kiedy używać Server Components?}
+
+Server Components są idealne do:
+
+\begin{itemize}
+    \item Pobierania danych z bazy lub API
+    \item Dostępu do zasobów backendowych
+    \item Przechowywania wrażliwych informacji (API keys, tokeny)
+    \item Zmniejszania bundle size aplikacji
+    \item Renderowania statycznej treści
+\end{itemize}
+
+\subsection{Strona główna - app/page.tsx}
+
+Strona główna aplikacji jest Server Component. Odpowiada za pobranie listy zadań z bazy i wyświetlenie ich użytkownikowi.
+
+\begin{lstlisting}[language=TypeScript, caption={Strona główna aplikacji - pełny kod}, label={lst:main-page}]
+import Link from 'next/link';
+import { getTodos } from './actions';
+import { TodoItem } from './components/TodoItem';
+import styles from './page.module.css';
+
+export default async function Home() {
+  const todos = await getTodos();
+
+  const todosList = todos.map((todo) => (
+      <TodoItem
+          key={todo.id}
+          id={todo.id}
+          text={todo.text}
+          completed={todo.completed}
+          createdAt={todo.createdAt}
+      />
+      )
+  );
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1>Lista zadań</h1>
+        <Link href="/add" className={styles.addBtn}>
+          Dodaj nowe zadanie
+        </Link>
+      </div>
+
+      {todos.length === 0 ? (
+        <p className={styles.emptyMessage}>
+          Brak zadań. Dodaj nowe zadanie!
+        </p>
+      ) : (
+        <div className={styles.todoList}>
+          {todosList}
+        </div>
+      )}
+    </div>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/page.tsx:1-38}
+
+\subsubsection{Analiza kodu}
+
+\paragraph{Funkcja asynchroniczna}
+\begin{lstlisting}[language=TypeScript]
+export default async function Home() {
+\end{lstlisting}
+
+Komponent jest funkcją \texttt{async}, co pozwala używać \texttt{await} bezpośrednio w ciele funkcji. To możliwe tylko w Server Components.
+
+\paragraph{Pobieranie danych}
+\begin{lstlisting}[language=TypeScript]
+const todos = await getTodos();
+\end{lstlisting}
+
+Bezpośrednie wywołanie Server Action \texttt{getTodos()}, która komunikuje się z bazą danych. Wykonywane po stronie serwera przy każdym renderowaniu strony.
+
+\paragraph{Mapowanie danych na komponenty}
+\begin{lstlisting}[language=TypeScript]
+const todosList = todos.map((todo) => (
+  <TodoItem
+    key={todo.id}
+    id={todo.id}
+    text={todo.text}
+    completed={todo.completed}
+    createdAt={todo.createdAt}
+  />
+));
+\end{lstlisting}
+
+Transformacja tablicy zadań na tablicę komponentów React. Każdy element otrzymuje unikalny \texttt{key} (id zadania), wymagany przez React do efektywnego renderowania list.
+
+\paragraph{Warunkowe renderowanie}
+\begin{lstlisting}[language=TypeScript]
+{todos.length === 0 ? (
+  <p>Brak zadań. Dodaj nowe zadanie!</p>
+) : (
+  <div>{todosList}</div>
+)}
+\end{lstlisting}
+
+Jeśli lista jest pusta, wyświetla komunikat. W przeciwnym razie renderuje listę zadań.
+
+\paragraph{Nawigacja}
+\begin{lstlisting}[language=TypeScript]
+<Link href="/add" className={styles.addBtn}>
+  Dodaj nowe zadanie
+</Link>
+\end{lstlisting}
+
+Komponent \texttt{Link} do nawigacji client-side na stronę \texttt{/add}.
+
+\subsection{Strona dodawania - app/add/page.tsx}
+
+Strona dodawania zadania jest prostym Server Component, który renderuje formularz.
+
+\begin{lstlisting}[language=TypeScript, caption={Strona dodawania zadania}]
+import { TodoForm } from '../components/TodoForm';
+import Link from 'next/link';
+import styles from './add.module.css';
+
+export default function AddPage() {
+  return (
+    <div className={styles.container}>
+      <div className={styles.formHeader}>
+        <h1>Dodaj nowe zadanie</h1>
+        <Link href="/" className={styles.backLink}>
+          ← Powrót do listy
+        </Link>
+      </div>
+      <TodoForm mode="add" />
+    </div>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/add/page.tsx}
+
+\subsubsection{Analiza}
+
+Komponent jest prosty:
+\begin{itemize}
+    \item Renderuje nagłówek strony
+    \item Renderuje link powrotu do listy głównej
+    \item Renderuje komponent \texttt{TodoForm} w trybie \texttt{'add'}
+\end{itemize}
+
+Zauważ, że sam komponent \texttt{AddPage} jest Server Component, ale renderuje Client Component (\texttt{TodoForm}). To dozwolone - Server Components mogą renderować Client Components.
+
+\subsection{Strona edycji - app/edit/[id]/page.tsx}
+
+Strona edycji jest bardziej złożonym Server Component z dynamicznym parametrem.
+
+\begin{lstlisting}[language=TypeScript, caption={Strona edycji zadania - pełny kod}]
+import { notFound } from 'next/navigation';
+import { getTodoById } from '@/app/actions';
+import { TodoForm } from '@/app/components/TodoForm';
+import Link from 'next/link';
+import styles from './edit.module.css';
+
+export default async function EditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const todo = await getTodoById(parseInt(id, 10));
+
+  if (!todo) {
+    notFound();
+  }
+
+  return (
+    <div className={styles.container}>
+      <div className={styles.formHeader}>
+        <h1>Edytuj zadanie</h1>
+        <Link href="/" className={styles.backLink}>
+          ← Powrót do listy
+        </Link>
+      </div>
+      <TodoForm mode="edit" todo={todo} />
+    </div>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/edit/[id]/page.tsx}
+
+\subsubsection{Analiza kodu}
+
+\paragraph{Parametry dynamiczne}
+\begin{lstlisting}[language=TypeScript]
+export default async function EditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+\end{lstlisting}
+
+Parametr \texttt{id} jest przekazywany przez routing Next.js. W Next.js 15+ parametry są zwracane jako Promise, więc wymagają \texttt{await}.
+
+\paragraph{Pobieranie danych}
+\begin{lstlisting}[language=TypeScript]
+const todo = await getTodoById(parseInt(id, 10));
+\end{lstlisting}
+
+Pobranie zadania z bazy na podstawie ID. Parametr URL jest stringiem, więc konwertujemy na liczbę.
+
+\paragraph{Obsługa błędów}
+\begin{lstlisting}[language=TypeScript]
+if (!todo) {
+  notFound();
+}
+\end{lstlisting}
+
+Jeśli zadanie o danym ID nie istnieje, wywołujemy funkcję \texttt{notFound()}, która wyświetli stronę 404.
+
+\paragraph{Renderowanie formularza}
+\begin{lstlisting}[language=TypeScript]
+<TodoForm mode="edit" todo={todo} />
+\end{lstlisting}
+
+Renderowanie formularza w trybie edycji, przekazując istniejące dane zadania.
+
+\subsection{Root Layout - app/layout.tsx}
+
+Root layout definiuje globalną strukturę HTML aplikacji.
+
+\begin{lstlisting}[language=TypeScript, caption={Root layout - pełny kod}]
+import type { Metadata } from 'next';
+import './globals.css';
+
+export const metadata: Metadata = {
+  title: 'TODO List',
+  description: 'Aplikacja do zarządzania zadaniami',
+};
+
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
+  return (
+    <html lang="pl">
+      <body>{children}</body>
+    </html>
+  );
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{app/layout.tsx}
+
+\subsubsection{Metadata}
+
+\begin{lstlisting}[language=TypeScript]
+export const metadata: Metadata = {
+  title: 'TODO List',
+  description: 'Aplikacja do zarządzania zadaniami',
+};
+\end{lstlisting}
+
+Metadane aplikacji eksportowane jako stała. Next.js automatycznie wstawia je do \texttt{<head>} dokumentu HTML:
+
+\begin{lstlisting}[language=HTML]
+<head>
+  <title>TODO List</title>
+  <meta name="description" content="Aplikacja do zarządzania zadaniami" />
+</head>
+\end{lstlisting}
+
+\subsubsection{Struktura HTML}
+
+Layout musi zwracać kompletny dokument HTML z \texttt{<html>} i \texttt{<body>}:
+
+\begin{lstlisting}[language=TypeScript]
+return (
+  <html lang="pl">
+    <body>{children}</body>
+  </html>
+);
+\end{lstlisting}
+
+Prop \texttt{children} zawiera zawartość renderowanej strony. Layout otacza wszystkie strony aplikacji swoją strukturą.
+
+\subsection{Zalety Server Components w projekcie}
+
+\subsubsection{Mniejszy bundle JavaScript}
+
+Server Components nie są wysyłane do przeglądarki, co znacząco zmniejsza rozmiar bundle. W naszej aplikacji:
+
+\begin{itemize}
+    \item \texttt{app/page.tsx} - nie trafia do bundle (tylko TodoItem jako Client Component)
+    \item \texttt{app/add/page.tsx} - nie trafia do bundle
+    \item \texttt{app/edit/[id]/page.tsx} - nie trafia do bundle
+\end{itemize}
+
+\subsubsection{Bezpieczeństwo}
+
+Server Components mogą bezpośrednio komunikować się z bazą danych bez eksponowania danych uwierzytelniających do klienta:
+
+\begin{lstlisting}[language=TypeScript]
+// Bezpieczne - wykonywane tylko na serwerze
+const todos = await getTodos();
+\end{lstlisting}
+
+Connection string do bazy, klucze API, sekrety - wszystko pozostaje na serwerze.
+
+\subsubsection{Lepsze SEO}
+
+Server Components są renderowane do HTML na serwerze, co oznacza, że:
+
+\begin{itemize}
+    \item Wyszukiwarki otrzymują pełny HTML z danymi
+    \item Brak problemu z indeksowaniem treści generowanych JavaScript
+    \item Szybsze First Contentful Paint (FCP)
+\end{itemize}
+
+\subsubsection{Dostęp do zasobów backendowych}
+
+Server Components mogą bezpośrednio używać:
+
+\begin{itemize}
+    \item Systemów plików (Node.js \texttt{fs} module)
+    \item Zmiennych środowiskowych serwera
+    \item Baz danych bez warstwy API
+\end{itemize}
+\newpage

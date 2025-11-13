@@ -1,0 +1,330 @@
+\section{Uruchamianie i rozwój aplikacji}
+
+Rozdział omawia proces uruchomienia i rozwoju - od pierwszego sklonowania projektu, przez uruchomienie w trybie deweloperskim, aż po budowanie wersji produkcyjnej.
+
+\subsection{Wymagania systemowe}
+
+Przed rozpoczęciem pracy z projektem należy zainstalować:
+
+\begin{enumerate}
+    \item \textbf{Node.js} (wersja 24.0.0 lub nowsza)
+    \begin{itemize}
+        \item Sprawdzenie wersji: \texttt{node -{}-version}
+        \item Pobieranie: \url{https://nodejs.org}
+    \end{itemize}
+
+    \item \textbf{npm} (instalowany automatycznie z Node.js)
+    \begin{itemize}
+        \item Sprawdzenie wersji npm: \texttt{npm -{}-version}
+    \end{itemize}
+
+    \item \textbf{Git} (do klonowania repozytorium)
+    \begin{itemize}
+        \item Sprawdzenie wersji: \texttt{git -{}-version}
+        \item Pobieranie: \url{https://git-scm.com}
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Pierwsze uruchomienie projektu}
+
+\subsubsection{Krok 1: Instalacja zależności}
+
+Po sklonowaniu lub pobraniu projektu, należy zainstalować wszystkie zależności:
+
+\begin{lstlisting}[language=bash, caption={Instalacja zależności}]
+npm install
+\end{lstlisting}
+
+Komenda ta:
+\begin{itemize}
+    \item Odczytuje plik \texttt{package.json}
+    \item Pobiera wszystkie zależności z \href{https://www.npmjs.com/}{npm registry}
+    \item Instaluje je w katalogu \texttt{node\_modules}
+    \item Generuje lub aktualizuje lock file (\texttt{package-lock.json}) (który dokładnie opisuje strukturę i wersje wszystkich zainstalowanych zależności projektu)
+\end{itemize}
+
+\subsubsection{Krok 2: Konfiguracja zmiennych środowiskowych}
+
+Skopiuj plik przykładowy \texttt{example.env} do \texttt{.env}:
+
+\begin{lstlisting}[language=bash, caption={Utworzenie pliku .env}]
+cp example.env .env
+\end{lstlisting}
+
+Lub ręcznie utwórz plik \texttt{.env} w katalogu głównym projektu:
+
+\begin{lstlisting}[caption={Zawartość pliku .env}]
+DATABASE_URL="file:./dev.db"
+\end{lstlisting}
+
+Dla SQLite wystarczy powyższa konfiguracja. Dla innych baz danych (PostgreSQL, MySQL) należy podać odpowiedni connection string.
+
+\subsubsection{Krok 3: Inicjalizacja bazy danych}
+
+Uruchom migracje Prisma aby utworzyć bazę danych i tabele:
+
+\begin{lstlisting}[language=bash, caption={Wykonanie migracji}]
+npm run db:update
+\end{lstlisting}
+
+Komenda ta wykonuje:
+\begin{lstlisting}[language=bash]
+prisma migrate deploy && prisma generate
+\end{lstlisting}
+
+\begin{itemize}
+    \item \texttt{prisma migrate deploy} - wykonuje wszystkie oczekujące migracje, aktualizując strukturę bazy danych do najnowszej wersji. 
+    \item \texttt{prisma generate} - generuje Prisma Client
+\end{itemize}
+
+Po wykonaniu tej komendy:
+\begin{itemize}
+    \item Zostanie utworzony plik \texttt{prisma/dev.db} (baza SQLite)
+    \item Zostanie utworzona tabela \texttt{Todo}
+    \item Prisma Client zostanie wygenerowany w \texttt{node\_modules/@prisma/client}
+\end{itemize}
+
+\subsubsection{Krok 4: Uruchomienie serwera deweloperskiego}
+
+\begin{lstlisting}[language=bash, caption={Uruchomienie dev server}]
+npm run dev
+\end{lstlisting}
+
+Komenda ta:
+\begin{itemize}
+    \item Uruchamia Next.js w trybie deweloperskim
+    \item Startuje serwer na porcie 3000
+    \item Włącza Hot Module Replacement (HMR)
+    \item Włącza Fast Refresh (natychmiastowe odświeżanie po zmianach w kodzie)
+\end{itemize}
+
+Output w terminalu:
+\begin{lstlisting}
+> nextjs-todo@0.1.0 dev
+> next dev
+
+  ▲ Next.js 16.0.1
+  - Local:        http://localhost:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 2.3s
+\end{lstlisting}
+
+Aplikacja jest dostępna pod adresem \url{http://localhost:3000}.
+
+\subsection{Skrypty npm}
+
+Wszystkie dostępne skrypty zdefiniowane w \texttt{package.json}:
+
+\subsubsection{npm run dev - serwer deweloperski}
+
+\begin{lstlisting}[language=bash]
+npm run dev
+\end{lstlisting}
+
+\begin{itemize}
+    \item Uruchamia Next.js w trybie development
+    \item Port: 3000
+    \item Hot Module Replacement włączony
+    \item Source maps włączone
+    \item Nie optymalizuje kodu (szybszy build)
+\end{itemize}
+
+\subsubsection{npm run build - budowanie produkcji}
+
+\begin{lstlisting}[language=bash]
+npm run build
+\end{lstlisting}
+
+\begin{itemize}
+    \item Kompiluje aplikację do wersji produkcyjnej
+    \item Optymalizuje kod (minifikacja, tree-shaking)
+    \item Generuje statyczne HTML dla stron
+    \item Tworzy skompresowane pliki JavaScript
+\end{itemize}
+
+\subsubsection{npm run start - serwer produkcyjny}
+
+\begin{lstlisting}[language=bash]
+npm run start
+\end{lstlisting}
+
+\begin{itemize}
+    \item Uruchamia zbudowaną aplikację (wymaga wcześniejszego \texttt{npm run build})
+    \item Port: 3000
+    \item Optymalizowany kod
+    \item Brak HMR
+    \item Gotowe do wdrożenia
+\end{itemize}
+
+\subsubsection{npm run lint - analiza kodu}
+
+\begin{lstlisting}[language=bash]
+npm run lint
+\end{lstlisting}
+
+\begin{itemize}
+    \item Uruchamia ESLint
+    \item Sprawdza kod pod kątem błędów i niezgodności ze stylem
+    \item Używa konfiguracji \texttt{eslint-config-next}
+\end{itemize}
+
+\subsubsection{npm run db:migrate - tworzenie migracji}
+
+\begin{lstlisting}[language=bash]
+npm run db:migrate nazwa_migracji
+\end{lstlisting}
+
+\begin{itemize}
+    \item Tworzy nową migrację bazy danych
+    \item Generuje plik SQL w \texttt{prisma/migrations}
+    \item Nie wykonuje migracji (tylko tworzy plik)
+\end{itemize}
+
+Przykład:
+\begin{lstlisting}[language=bash]
+npm run db:migrate add_priority_field
+\end{lstlisting}
+
+\subsubsection{npm run db:update - wykonanie migracji}
+
+\begin{lstlisting}[language=bash]
+npm run db:update
+\end{lstlisting}
+
+\begin{itemize}
+    \item Wykonuje wszystkie pending migrations
+    \item Generuje Prisma Client
+    \item Aktualizuje bazę danych do najnowszej wersji schematu
+\end{itemize}
+
+\subsection{Workflow deweloperski}
+
+Typowy cykl pracy nad projektem:
+
+\subsubsection{Uruchomienie środowiska}
+
+\begin{lstlisting}[language=bash]
+# Terminal 1: serwer deweloperski
+npm run dev
+\end{lstlisting}
+
+Serwer uruchamia się i nasłuchuje na zmiany w plikach. Aby zakończyć użyj skrótu CTRL+C.
+
+\subsubsection{Edycja kodu}
+
+\begin{itemize}
+    \item Otwórz plik w edytorze (np. \texttt{app/page.tsx})
+    \item Wprowadź zmiany
+    \item Zapisz plik
+    \item Next.js automatycznie wykryje zmiany i odświeży przeglądarkę (Fast Refresh)
+\end{itemize}
+
+\subsubsection{Modyfikacja schematu bazy}
+
+Jeśli zmieniasz schemat Prisma:
+
+\begin{lstlisting}[language=bash]
+# 1. Edytuj prisma/schema.prisma
+# 2. Utwórz migrację
+npm run db:migrate nazwa_zmiany
+
+# 3. Wykonaj migrację
+npm run db:update
+\end{lstlisting}
+
+\subsubsection{Sprawdzenie jakości kodu}
+
+\begin{lstlisting}[language=bash]
+npm run lint
+\end{lstlisting}
+
+Napraw ewentualne błędy zgłoszone przez ESLint.
+
+\subsubsection{Testowanie}
+
+\begin{itemize}
+    \item Otwórz \url{http://localhost:3000} w przeglądarce
+    \item Przetestuj funkcjonalności aplikacji
+    \item Sprawdź konsolę przeglądarki (F12) pod kątem błędów
+    \item Aby zakończyć użyj skrótu CTRL+C
+\end{itemize}
+
+\subsection{Prisma Studio - GUI bazy danych}
+
+Prisma oferuje graficzny interfejs do przeglądania i edycji danych:
+
+\begin{lstlisting}[language=bash]
+npx prisma studio
+\end{lstlisting}
+
+Output:
+\begin{lstlisting}
+Environment variables loaded from .env
+Prisma Studio is running on http://localhost:5555
+\end{lstlisting}
+
+W przeglądarce pod adresem \url{http://localhost:5555} dostępny jest graficzny interfejs do:
+\begin{itemize}
+    \item Przeglądania tabel
+    \item Dodawania rekordów
+    \item Edycji rekordów
+    \item Usuwania rekordów
+\end{itemize}
+
+\subsection{Debugowanie}
+
+\subsubsection{Console.log w Server Components}
+
+W Server Components \texttt{console.log()} wypisuje do terminala (nie do konsoli przeglądarki):
+
+\begin{lstlisting}[language=TypeScript, caption={Debugowanie Server Component}]
+export default async function Home() {
+  const todos = await getTodos();
+  console.log('Liczba zadań:', todos.length);  // Output w terminalu
+  // ...
+}
+\end{lstlisting}
+
+\subsubsection{Console.log w Client Components}
+
+W Client Components \texttt{console.log()} wypisuje do konsoli przeglądarki:
+
+\begin{lstlisting}[language=TypeScript, caption={Debugowanie Client Component}]
+'use client';
+
+export function TodoItem({ id }) {
+  const handleClick = () => {
+    console.log('Kliknięto zadanie:', id);  // Output w konsoli przeglądarki
+  };
+  // ...
+}
+\end{lstlisting}
+
+\subsubsection{React DevTools}
+
+Zainstaluj rozszerzenie React DevTools do przeglądarki:
+\begin{itemize}
+    \item Chrome: \url{https://chrome.google.com/webstore}
+    \item Firefox: \url{https://addons.mozilla.org}
+\end{itemize}
+
+Umożliwia:
+\begin{itemize}
+    \item Inspekcję drzewa komponentów
+    \item Podgląd props i state
+    \item Śledzenie renderowania komponentów
+\end{itemize}
+
+\subsection{Rozwiązywanie problemów}
+
+\subsubsection{Błąd migracji}
+
+Jeśli migracje są w niespójnym stanie:
+
+\begin{lstlisting}[language=bash]
+# Reset bazy (UWAGA: usuwa wszystkie dane!)
+npx prisma migrate reset
+\end{lstlisting}
+\newpage

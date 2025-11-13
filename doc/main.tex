@@ -1,0 +1,214 @@
+\documentclass[12pt,a4paper]{article}
+
+% Kodowanie i język
+\usepackage[utf8]{inputenc}
+\usepackage[polish]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{newunicodechar}
+
+% Definicje typograficznych znaków Unicode
+\newunicodechar{'}{\textquotesingle}
+\newunicodechar{"}{``}
+\newunicodechar{"}{''}
+\newunicodechar{–}{--}
+\newunicodechar{—}{---}
+
+% Znaki box-drawing dla outputu npm
+\newunicodechar{┌}{+}
+\newunicodechar{├}{|}
+\newunicodechar{└}{`}
+\newunicodechar{│}{|}
+\newunicodechar{○}{o}
+
+% Marginesy
+\usepackage[margin=2.5cm]{geometry}
+
+% Grafika
+\usepackage{graphicx}
+
+% Kolory
+\usepackage{xcolor}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+% Listingi kodu
+\usepackage{listings}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    rulecolor=\color{black},
+    extendedchars=true,
+    inputencoding=utf8
+}
+\lstset{style=mystyle}
+
+% Obsługa polskich znaków w listingach
+\lstset{literate=%
+  {ą}{{\k{a}}}1
+  {ć}{{\'c}}1
+  {ę}{{\k{e}}}1
+  {ł}{{\l{}}}1
+  {ń}{{\'n}}1
+  {ó}{{\'o}}1
+  {ś}{{\'s}}1
+  {ź}{{\'z}}1
+  {ż}{{\.z}}1
+  {Ą}{{\k{A}}}1
+  {Ć}{{\'C}}1
+  {Ę}{{\k{E}}}1
+  {Ł}{{\L{}}}1
+  {Ń}{{\'N}}1
+  {Ó}{{\'O}}1
+  {Ś}{{\'S}}1
+  {Ź}{{\'Z}}1
+  {Ż}{{\.Z}}1
+  {'}{{`}}1
+  {"}{{"}}1
+  {"}{{''}}1
+  {–}{{--}}1
+  {—}{{---}}1
+  {┌}{{+}}1
+  {├}{{|}}1
+  {└}{{`}}1
+  {│}{{|}}1
+  {○}{{o}}1
+}
+
+% Język JavaScript dla listingów
+\lstdefinelanguage{JavaScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break, const, let, async, await, export, import, from, default, class, extends},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={boolean, number, string, void},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen}\ttfamily,
+  stringstyle=\color{codepurple}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+% Język TypeScript dla listingów
+\lstdefinelanguage{TypeScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break, const, let, async, await, export, import, from, default, interface, type, class, extends, implements},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={boolean, number, string, void, any, Promise},
+  ndkeywordstyle=\color{darkgray}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen}\ttfamily,
+  stringstyle=\color{codepurple}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinelanguage{SQL}{
+  keywords={SELECT, FROM, WHERE, INSERT, INTO, VALUES, UPDATE, SET, DELETE, CREATE, TABLE, PRIMARY, KEY, NOT, NULL, DEFAULT, AUTOINCREMENT, INTEGER, TEXT, BOOLEAN, DATETIME},
+  keywordstyle=\color{blue}\bfseries,
+  sensitive=false,
+  comment=[l]{--},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen}\ttfamily,
+  stringstyle=\color{codepurple}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\lstdefinelanguage{CSS}{
+  keywords={color, background, background-color, margin, padding, font, font-family, font-size, font-weight, border, border-radius, width, height, display, flex, flex-direction, justify-content, align-items, position, top, left, right, bottom, box-shadow, text-decoration, line-height, max-width, gap, cursor},
+  keywordstyle=\color{blue}\bfseries,
+  sensitive=false,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen}\ttfamily,
+  stringstyle=\color{codepurple}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+% Hiperłącza
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    pdftitle={Aplikacja TODO w Next.js - Przewodnik},
+    pdfauthor={},
+    pdfsubject={Next.js, React, TypeScript},
+    pdfkeywords={Next.js, React, TypeScript, Prisma, webdev},
+}
+
+% Nagłówki i stopki
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Aplikacja TODO w Next.js}
+\lhead{\leftmark}
+\rfoot{Strona \thepage}
+
+% Spis treści
+\usepackage{tocloft}
+
+% Metadane dokumentu
+\title{
+    \Large\textbf{Aplikacja TODO w Next.js} \\
+    \large Przewodnik tworzenia nowoczesnej aplikacji webowej \\
+    \vspace{0.5cm}
+    \normalsize Wprowadzenie do Next.js, React, TypeScript i Prisma
+}
+\author{}
+\date{\today}
+
+% Początek dokumentu
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Niniejszy dokument stanowi kompleksowy przewodnik po tworzeniu aplikacji webowej do zarządzania listą zadań (TODO) przy użyciu frameworka Next.js. Materiał przeznaczony jest dla studentów informatyki rozpoczynających naukę programowania aplikacji webowych. Dokument omawia architekturę aplikacji, wykorzystane technologie oraz szczegółową implementację wszystkich komponentów systemu.
+
+Aplikacja została zbudowana w oparciu o najnowsze standardy i najlepsze praktyki programowania webowego, wykorzystując React 19, Next.js 16, TypeScript oraz bazę danych SQLite z ORM Prisma. Przewodnik krok po kroku wyjaśnia budowę aplikacji od podstaw, omawiając zarówno aspekty teoretyczne, jak i praktyczne implementacji.
+\end{abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+% Włączenie rozdziałów
+\input{chapters/01_wprowadzenie.tex}
+\input{chapters/02_technologie.tex}
+\input{chapters/03_struktura_projektu.tex}
+\input{chapters/04_konfiguracja.tex}
+\input{chapters/05_baza_danych.tex}
+\input{chapters/06_routing.tex}
+\input{chapters/07_komponenty_serwerowe.tex}
+\input{chapters/08_komponenty_klienckie.tex}
+\input{chapters/09_server_actions.tex}
+\input{chapters/10_stylowanie.tex}
+\input{chapters/11_uruchamianie.tex}
+
+\end{document}

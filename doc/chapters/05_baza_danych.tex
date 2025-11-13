@@ -1,0 +1,258 @@
+\section{Baza danych i Prisma ORM}
+
+Niniejszy rozdział omawia warstwę persystencji danych w aplikacji. Szczegółowo opisuje schemat bazy danych, model danych oraz mechanizm migracji.
+
+\subsection{Wprowadzenie do Prisma}
+
+Prisma to nowoczesny ORM (Object-Relational Mapping), który zapewnia warstwę abstrakcji nad bazą danych. Zamiast pisać surowe zapytania SQL, używamy API Prisma w TypeScript, które jest w pełni typowane.
+
+\subsubsection{Zalety Prisma}
+
+\begin{enumerate}
+    \item \textbf{Type Safety} - zapytania są w pełni typowane, kompilator wykryje błędy
+    \item \textbf{Auto-completion} - IDE podpowiada dostępne pola i metody
+    \item \textbf{Migracje} - automatyczne generowanie i zarządzanie migracjami schematu. Migracja to uporządkowana zmiana w strukturze bazy danych (np. dodanie tabeli, kolumny, indeksu). Prisma automatycznie generuje pliki SQL opisujące te zmiany, co pozwala na kontrolowanie ewolucji schematu bazy danych w czasie oraz synchronizację między środowiskami (development, staging, production)
+    \item \textbf{Deklaratywny schemat} - czytelna definicja modeli w języku Prisma Schema
+\end{enumerate}
+
+\subsection{Schemat Prisma}
+
+Schemat Prisma definiuje strukturę bazy danych w pliku \texttt{prisma/schema.prisma}. Jest to deklaratywna definicja modeli, relacji oraz konfiguracji połączenia.
+
+\begin{lstlisting}[caption={Pełna zawartość pliku schema.prisma}, label={lst:prisma-schema}]
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  text      String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{prisma/schema.prisma:1-16}
+
+\subsubsection{Sekcja generator}
+
+\begin{lstlisting}[language=JavaScript]
+generator client {
+  provider = "prisma-client-js"
+}
+\end{lstlisting}
+
+Definicja generatora klienta Prisma. Opcja \texttt{provider = "prisma-client-js"} oznacza, że zostanie wygenerowany klient JavaScript/TypeScript.
+
+Po każdej zmianie schematu należy uruchomić:
+\begin{lstlisting}[language=bash]
+npx prisma generate
+\end{lstlisting}
+
+Komenda ta generuje kod TypeScript klienta Prisma w katalogu \texttt{node\_modules/@prisma/client}.
+
+\subsubsection{Sekcja datasource}
+
+\begin{lstlisting}[language=JavaScript]
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+\end{lstlisting}
+
+Definicja źródła danych (bazy danych):
+
+\begin{itemize}
+    \item \texttt{provider = "sqlite"} - typ bazy danych (SQLite)
+    \item \texttt{url = env("DATABASE\_URL")} - connection string pobierany ze zmiennej środowiskowej
+\end{itemize}
+
+Zmienna \texttt{DATABASE\_URL} jest zdefiniowana w pliku \texttt{.env}:
+\begin{lstlisting}
+DATABASE_URL="file:./dev.db"
+\end{lstlisting}
+
+\subsection{Model Todo}
+
+Model Todo reprezentuje pojedyncze zadanie na liście. Składa się z czterech pól:
+
+\begin{lstlisting}[caption={Model Todo}, label={lst:model-todo}]
+model Todo {
+  id        Int      @id @default(autoincrement())
+  text      String
+  completed Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+\end{lstlisting}
+
+Odwołanie do pliku: \texttt{prisma/schema.prisma:10-15}
+
+\subsubsection{Pola modelu}
+
+\paragraph{id: Int}
+\begin{itemize}
+    \item Typ: Integer (liczba całkowita)
+    \item \texttt{@id} - oznacza klucz główny tabeli
+    \item \texttt{@default(autoincrement())} - automatycznie inkrementowana wartość dla nowych rekordów
+    \item Unikalna wartość identyfikująca zadanie
+\end{itemize}
+
+\paragraph{text: String}
+\begin{itemize}
+    \item Typ: String (tekst)
+    \item Przechowuje treść zadania
+    \item Brak domyślnej wartości - pole wymagane przy tworzeniu rekordu
+\end{itemize}
+
+\paragraph{completed: Boolean}
+\begin{itemize}
+    \item Typ: Boolean (wartość logiczna)
+    \item \texttt{@default(false)} - domyślnie zadanie jest nieukończone
+    \item Określa, czy zadanie zostało wykonane
+\end{itemize}
+
+\paragraph{createdAt: DateTime}
+\begin{itemize}
+    \item Typ: DateTime (data i czas)
+    \item \texttt{@default(now())} - automatycznie ustawiana na bieżący czas przy tworzeniu rekordu
+    \item Przechowuje datę i czas utworzenia zadania
+\end{itemize}
+
+\subsection{Migracje bazy danych}
+
+Migracje to mechanizm wersjonowania schematu bazy danych. Każda zmiana w schemacie Prisma generuje migrację - plik SQL opisujący transformację schematu.
+
+\subsubsection{Inicjalna migracja}
+
+Pierwsza migracja projektu znajduje się w katalogu:
+\begin{lstlisting}
+prisma/migrations/20251109083508_init/migration.sql
+\end{lstlisting}
+
+Zawartość pliku migracji:
+
+\begin{lstlisting}[language=SQL, caption={Inicjalna migracja bazy danych}]
+-- CreateTable
+CREATE TABLE "Todo" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "text" TEXT NOT NULL,
+    "completed" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+\end{lstlisting}
+
+\subsubsection{Analiza SQL}
+
+\begin{itemize}
+    \item \texttt{CREATE TABLE "Todo"} - tworzy tabelę o nazwie "Todo"
+    \item \texttt{INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT} - klucz główny typu całkowitego, automatycznie inkrementowany
+    \item \texttt{TEXT NOT NULL} - pole tekstowe, wymagane (nie może być NULL)
+    \item \texttt{BOOLEAN NOT NULL DEFAULT false} - pole logiczne z wartością domyślną false
+    \item \texttt{DATETIME NOT NULL DEFAULT CURRENT\_TIMESTAMP} - data/czas z automatyczną wartością bieżącego czasu
+\end{itemize}
+
+\subsubsection{Proces migracji}
+
+Typowy workflow pracy z migracjami:
+
+\begin{enumerate}
+    \item Modyfikacja pliku \texttt{schema.prisma} (np. dodanie nowego pola)
+    \item Utworzenie migracji: \texttt{npx prisma migrate dev -{}-name nazwa\_migracji}
+    \item Prisma automatycznie:
+    \begin{itemize}
+        \item Generuje plik SQL z migracją
+        \item Wykonuje migrację na bazie deweloperskiej
+        \item Regeneruje Prisma Client
+    \end{itemize}
+\end{enumerate}
+
+\subsection{Prisma Client}
+
+Prisma Client to automatycznie generowany klient bazy danych, który zapewnia type-safe API do wykonywania zapytań.
+
+\subsubsection{Singleton Prisma Client}
+
+Plik \texttt{lib/prisma.ts} eksportuje singleton instancji Prisma Client:
+
+\begin{lstlisting}[language=TypeScript, caption={Singleton Prisma Client}]
+import { PrismaClient } from '@prisma/client';
+
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+
+if (process.env.NODE_ENV !== 'production') {
+  globalForPrisma.prisma = prisma;
+}
+\end{lstlisting}
+
+\subsubsection{Dlaczego singleton?}
+
+W środowisku deweloperskim Next.js używa Hot Module Replacement (HMR), który przeładowuje moduły podczas developmentu. Bez singletona każde przeładowanie tworzyłoby nową instancję \texttt{PrismaClient}, co prowadziłoby do wyczerpania połączeń z bazą danych.
+
+Singleton zapewnia, że w całej aplikacji istnieje tylko jedna instancja klienta.
+
+\subsection{Przykłady użycia Prisma Client}
+
+\subsubsection{Pobieranie wszystkich zadań}
+
+\begin{lstlisting}[language=TypeScript, caption={Pobieranie wszystkich zadań}]
+const todos = await prisma.todo.findMany({
+  orderBy: {
+    createdAt: 'desc',
+  },
+});
+\end{lstlisting}
+
+\subsubsection{Tworzenie nowego zadania}
+
+\begin{lstlisting}[language=TypeScript, caption={Tworzenie zadania}]
+await prisma.todo.create({
+  data: {
+    text: "Kupić mleko"
+  },
+});
+\end{lstlisting}
+
+\subsubsection{Aktualizacja zadania}
+
+\begin{lstlisting}[language=TypeScript, caption={Aktualizacja zadania}]
+await prisma.todo.update({
+  where: { id: 1 },
+  data: { completed: true },
+});
+\end{lstlisting}
+
+\subsubsection{Usunięcie zadania}
+
+\begin{lstlisting}[language=TypeScript, caption={Usunięcie zadania}]
+await prisma.todo.delete({
+  where: { id: 1 },
+});
+\end{lstlisting}
+
+\subsection{Typy generowane przez Prisma}
+
+Prisma automatycznie generuje typy TypeScript dla modeli:
+
+\begin{lstlisting}[language=TypeScript, caption={Automatycznie generowane typy}]
+import type { Todo } from '@prisma/client';
+
+// Typ Todo jest automatycznie wygenerowany:
+// {
+//   id: number;
+//   text: string;
+//   completed: boolean;
+//   createdAt: Date;
+// }
+\end{lstlisting}
+
+Typy te zapewniają bezpieczeństwo typów w całej aplikacji.
+\newpage
