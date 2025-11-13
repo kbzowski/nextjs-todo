@@ -37,3 +37,18 @@ next-env.d.ts
 /app/generated/prisma
 prisma/*.db
 prisma/*.db-journal
+
+# LaTeX auxiliary files
+doc/*.aux
+doc/*.log
+doc/*.toc
+doc/*.out
+doc/*.fls
+doc/*.fdb_latexmk
+doc/*.synctex.gz
+doc/*.bbl
+doc/*.blg
+doc/*.nav
+doc/*.snm
+doc/*.vrb
+doc/chapters/*.aux

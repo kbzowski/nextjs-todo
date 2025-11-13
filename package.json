@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+	"db:migrate": "prisma migrate dev --create-only --name",
+	"db:update": "prisma migrate deploy && prisma generate",
+	"doc:build": "cd doc && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex"
   },
   "dependencies": {
     "@prisma/client": "^6.19.0",
